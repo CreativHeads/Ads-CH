@@ -2,7 +2,16 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { DatabaseSync } from "node:sqlite";
+import { createRequire } from "node:module";
+
+// Hostinger's LiteSpeed loader require()s this file, so no top-level await.
+const require = createRequire(import.meta.url);
+let DatabaseSync = null;
+try {
+  ({ DatabaseSync } = require("node:sqlite"));
+} catch (error) {
+  console.error("sqlite unavailable", error instanceof Error ? error.message : error);
+}
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, "public");
@@ -22,9 +31,12 @@ function loadEnv() {
 }
 loadEnv();
 
-fs.mkdirSync(pdfDir, { recursive: true });
-const db = new DatabaseSync(path.join(dataDir, "workspace.db"));
-db.exec(`
+let db = null;
+if (DatabaseSync) {
+  try {
+    fs.mkdirSync(pdfDir, { recursive: true });
+    db = new DatabaseSync(path.join(dataDir, "workspace.db"));
+    db.exec(`
   CREATE TABLE IF NOT EXISTS workspace (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     data TEXT NOT NULL,
@@ -46,6 +58,11 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 `);
+  } catch (error) {
+    console.error("database unavailable", error instanceof Error ? error.message : error);
+    db = null;
+  }
+}
 
 const DENY = ["windsor", "openai", "gpt", "chatgpt", "supabase", "vercel", "telegram", "birch", "bïrch", "meta api"];
 function blocked(text) {
@@ -153,7 +170,7 @@ async function syncLive() {
     url.searchParams.set("fields", "date,account_id,account_name,account_currency,spend,impressions,link_clicks,actions_lead");
     url.searchParams.set("date_from", startDate);
     url.searchParams.set("date_to", endDate);
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(20000) });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       console.error("live sync failed", response.status, String(payload.error || payload.message || "request failed"));
@@ -223,6 +240,8 @@ async function sendTelegram(text) {
 }
 
 async function handleApi(req, res, pathname) {
+  if (!db && pathname !== "/api/live") return sendJson(res, 503, { error: "database unavailable" });
+
   if (req.method === "GET" && pathname === "/api/live") {
     return sendJson(res, 200, readLive());
   }
@@ -340,7 +359,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-await syncLive();
 server.listen(port, host, () => {
   console.log(`CreativHeads Ad Reports listening on ${port}`);
+  syncLive();
 });
