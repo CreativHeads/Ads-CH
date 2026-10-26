@@ -1,0 +1,61 @@
+@font-face{font-family:Hanken;src:url('/assets/hanken-regular.ttf') format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:Hanken;src:url('/assets/hanken-semibold.ttf') format('truetype');font-weight:600 900;font-display:swap}
+:root{--ink:#202c29;--muted:#6f7872;--green:#214e40;--forest:#153e35;--lime:#ddedcb;--line:#e3e7e1;--canvas:#f7f8f5;--paper:#fff;--teal:#1f8f7a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--ink);font:14px/1.45 Hanken,Arial,sans-serif}
+.bar{position:sticky;top:0;z-index:5;background:var(--forest);color:#fff;padding:12px 24px;display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center}
+.bar h1{margin:0;font-size:18px;font-weight:600}
+.back{color:var(--lime);text-decoration:none;font-size:13px}
+.filters{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end;margin-left:auto}
+.filters label{display:flex;flex-direction:column;font-size:11px;color:#cfe0d6;gap:2px}
+.filters select,.filters input{font:inherit;font-size:13px;padding:6px 8px;border-radius:8px;border:0;min-height:34px}
+.presets{display:flex;gap:4px}
+button{font:inherit;font-size:13px;cursor:pointer;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;padding:7px 11px;min-height:34px}
+button.primary{background:var(--lime);color:var(--forest);border-color:var(--lime);font-weight:600}
+button.ghost{background:transparent;color:var(--lime)}
+main{max-width:1180px;margin:0 auto;padding:24px}
+.status{color:var(--muted);padding:40px 0;text-align:center}
+.title h2{margin:0;font-size:24px;color:var(--forest)}
+.title p{margin:4px 0 16px;color:var(--muted);font-size:13px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:22px}
+.tile{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.tile small{display:block;color:var(--muted);font-size:11px}
+.tile strong{font-size:19px;font-weight:600}
+h3{font-size:16px;color:var(--teal);font-weight:600;margin:22px 0 8px}
+.scroll{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}
+th{background:var(--forest);color:#fff;font-weight:600;text-align:left;padding:8px 10px;font-size:12px;white-space:nowrap}
+td{padding:8px 10px;border-top:1px solid var(--line);white-space:nowrap}
+td:first-child{font-weight:600}
+tr.total td{background:#f1f4ef;font-weight:600}
+tr.link{cursor:pointer}tr.link:hover td{background:#f6faf3}
+.campaign{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:28px}
+.campaign>header h2{margin:0;font-size:21px;color:var(--forest)}
+.campaign>header p{margin:2px 0 12px;color:var(--muted);font-size:12px}
+.loc h4{margin:20px 0 8px;font-size:15px;color:var(--teal);font-weight:600}
+.loc h4 span{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
+.ads{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}
+.ad{display:flex;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;break-inside:avoid}
+.ad .thumb{flex:0 0 92px;height:116px;border-radius:8px;background:#eef1ec;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px}
+.ad .thumb img{width:100%;height:100%;object-fit:cover}
+.ad strong{display:block;font-size:14px;font-weight:600}
+.ad small{display:block;color:var(--muted);font-size:11.5px;margin-bottom:6px}
+.ad dl{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:2px 8px;margin:0;font-size:12.5px}
+.ad dt{color:var(--muted)}.ad dd{margin:0;font-weight:600}
+.note{color:var(--muted);font-size:12px;margin-top:6px}
+@media (max-width:700px){.bar{position:static;padding:12px 16px}.filters{margin-left:0}main{padding:16px}.campaign{padding:14px}.ads{grid-template-columns:1fr}}
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff;font-size:11px}
+  .bar{display:none}
+  main{padding:0;max-width:none}
+  .scroll{overflow:visible;border:0}
+  table{min-width:0;font-size:10px}
+  th,td{padding:4px 6px}
+  th,tr.total td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .campaign{break-before:page;border:0;padding:0;margin:0}
+  .loc{break-inside:avoid}
+  .ads{grid-template-columns:1fr 1fr;gap:6px}
+  .ad .thumb{flex-basis:70px;height:88px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .ad strong{font-size:11.5px}.ad dl{font-size:10px}
+}

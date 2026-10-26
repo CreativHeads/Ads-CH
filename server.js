@@ -188,6 +188,49 @@ async function syncLive() {
   }
 }
 
+const creativeCache = new Map();
+const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+
+async function fetchCreatives(from, to, fresh = false) {
+  const key = process.env.WINDSOR_API_KEY;
+  if (!key) throw Object.assign(new Error("live data not configured"), { status: 503 });
+  const cacheKey = `${from}|${to}`;
+  const hit = creativeCache.get(cacheKey);
+  if (!fresh && hit && Date.now() - hit.at < 30 * 60 * 1000) return hit.body;
+  const url = new URL("https://connectors.windsor.ai/facebook");
+  url.searchParams.set("api_key", key);
+  url.searchParams.set("fields", "account_name,account_currency,campaign,adset_name,ad_name,ad_id,thumbnail_url,spend,impressions,link_clicks,actions_lead,actions_onsite_conversion_messaging_conversation_started_7d");
+  url.searchParams.set("date_from", from);
+  url.searchParams.set("date_to", to);
+  const response = await fetch(url, { signal: AbortSignal.timeout(60000) });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    console.error("creatives sync failed", response.status);
+    throw Object.assign(new Error("live data request failed"), { status: 502 });
+  }
+  const rows = Array.isArray(payload) ? payload : payload.data || [];
+  const ads = rows
+    .filter((row) => Number(row.spend) > 0)
+    .map((row) => ({
+      account: String(row.account_name || ""),
+      currency: row.account_currency === "AED" ? "AED" : "INR",
+      campaign: String(row.campaign || ""),
+      adset: String(row.adset_name || ""),
+      name: String(row.ad_name || "").trim(),
+      id: String(row.ad_id || ""),
+      thumb: /^https:\/\//.test(row.thumbnail_url || "") ? row.thumbnail_url : null,
+      spend: Number(row.spend) || 0,
+      impressions: Math.round(Number(row.impressions) || 0),
+      clicks: Math.round(Number(row.link_clicks) || 0),
+      leads: Math.round(Number(row.actions_lead) || 0),
+      conv: Math.round(Number(row.actions_onsite_conversion_messaging_conversation_started_7d) || 0),
+    }));
+  const body = { from, to, syncedAt: new Date().toISOString(), accounts: [...new Set(ads.map((ad) => ad.account))].sort(), ads };
+  creativeCache.set(cacheKey, { at: Date.now(), body });
+  if (creativeCache.size > 50) creativeCache.delete(creativeCache.keys().next().value);
+  return body;
+}
+
 function readLive() {
   const cachePath = path.join(dataDir, "live.json");
   if (!fs.existsSync(cachePath)) return { clients: [], accounts: [], google: false };
@@ -240,6 +283,15 @@ async function sendTelegram(text) {
 }
 
 async function handleApi(req, res, pathname) {
+  if (req.method === "GET" && pathname === "/api/creatives") {
+    const params = new URL(req.url || "/", "http://localhost").searchParams;
+    const from = params.get("from") || "";
+    const to = params.get("to") || "";
+    const span = (Date.parse(to) - Date.parse(from)) / 86400000;
+    if (!isoDate.test(from) || !isoDate.test(to) || !(span >= 0 && span <= 92)) return sendJson(res, 400, { error: "invalid dates" });
+    return sendJson(res, 200, await fetchCreatives(from, to));
+  }
+
   if (!db && pathname !== "/api/live") return sendJson(res, 503, { error: "database unavailable" });
 
   if (req.method === "GET" && pathname === "/api/live") {
@@ -341,7 +393,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const file = fileFor(decodeURIComponent(url.pathname));
+  const file = fileFor(url.pathname === "/creatives" ? "/creatives.html" : decodeURIComponent(url.pathname));
   if (!file) {
     res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Bad request");
@@ -362,4 +414,8 @@ const server = http.createServer((req, res) => {
 server.listen(port, host, () => {
   console.log(`CreativHeads Ad Reports listening on ${port}`);
   syncLive();
+  // Windsor's ad-level query is slow (~45s), so keep the default "last 7 days" range warm.
+  const warm = () => fetchCreatives(kolkataDate(-7), kolkataDate(-1), true).catch((error) => console.error("creatives warm failed", error.message));
+  warm();
+  setInterval(warm, 25 * 60 * 1000).unref();
 });
