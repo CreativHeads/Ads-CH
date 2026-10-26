@@ -1,0 +1,346 @@
+import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { DatabaseSync } from "node:sqlite";
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const root = path.join(here, "public");
+const dataDir = path.join(here, "data");
+const pdfDir = path.join(dataDir, "pdfs");
+const port = Number(process.env.PORT) || 3000;
+const host = "0.0.0.0";
+
+function loadEnv() {
+  const file = path.join(here, ".env");
+  if (!fs.existsSync(file)) return;
+  for (const line of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
+    const match = line.match(/^([A-Z0-9_]+)=(.*)$/);
+    if (!match || process.env[match[1]]) continue;
+    process.env[match[1]] = match[2].replace(/^["']|["']$/g, "");
+  }
+}
+loadEnv();
+
+fs.mkdirSync(pdfDir, { recursive: true });
+const db = new DatabaseSync(path.join(dataDir, "workspace.db"));
+db.exec(`
+  CREATE TABLE IF NOT EXISTS workspace (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    data TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS outbox (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_id TEXT,
+    kind TEXT,
+    body TEXT NOT NULL,
+    delivered INTEGER NOT NULL DEFAULT 0,
+    error TEXT,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS pdfs (
+    id TEXT PRIMARY KEY,
+    client_id TEXT,
+    filename TEXT,
+    created_at TEXT NOT NULL
+  );
+`);
+
+const DENY = ["windsor", "openai", "gpt", "chatgpt", "supabase", "vercel", "telegram", "birch", "bïrch", "meta api"];
+function blocked(text) {
+  const lower = String(text || "").toLowerCase();
+  return DENY.some((word) => new RegExp(`(^|[^a-z0-9])${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^a-z0-9])`, "i").test(lower));
+}
+
+const types = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".ttf": "font/ttf",
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".json": "application/json; charset=utf-8",
+  ".pdf": "application/pdf",
+};
+
+function kolkataDate(offsetDays = 0) {
+  const now = new Date(Date.now() + offsetDays * 86400000);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(now);
+}
+
+function buildLive(rows, endDate) {
+  const byAccount = new Map();
+  for (const row of rows) {
+    const id = String(row.account_id || "");
+    const date = String(row.date || "").slice(0, 10);
+    if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    if (!byAccount.has(id)) byAccount.set(id, { id, name: String(row.account_name || id), currency: String(row.account_currency || "INR"), days: {} });
+    const account = byAccount.get(id);
+    if (row.account_name) account.name = String(row.account_name);
+    if (row.account_currency) account.currency = String(row.account_currency);
+    account.days[date] = {
+      spend: Number(row.spend) || 0,
+      leads: Number(row.actions_lead) || 0,
+      clicks: Number(row.link_clicks) || 0,
+      impressions: Number(row.impressions) || 0,
+    };
+  }
+  const spendOf = (account) => Object.values(account.days).reduce((sum, day) => sum + day.spend, 0);
+  const accounts = [...byAccount.values()].sort((a, b) => spendOf(b) - spendOf(a));
+  const palette = [
+    ["#eee7db", "#9c8764"],
+    ["#e6eddf", "#7d9569"],
+    ["#e9e5ee", "#9a89aa"],
+    ["#e3eaf0", "#7894a7"],
+    ["#f1e5df", "#b18a71"],
+    ["#e7e9e2", "#90997d"],
+  ];
+  const clients = accounts.map((account, index) => {
+    const yesterday = account.days[endDate] || { spend: 0 };
+    const [color, ink] = palette[index % palette.length];
+    const active = yesterday.spend > 0;
+    const currency = account.currency === "AED" ? "AED" : "INR";
+    return {
+      id: `c${account.id}`,
+      name: account.name,
+      sector: "Meta Ads",
+      currency,
+      budget: null,
+      color,
+      ink,
+      severity: active ? "low" : "none",
+      status: active ? "ready" : "skipped",
+      pace: null,
+      confidence: null,
+      ai: true,
+      reportEnabled: active,
+      context: "Meta lead generation. Spend, impressions, link clicks, and leads are account totals for the selected dates.",
+    };
+  });
+  const syncedLabel = `Live Meta sync · ${new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }).format(new Date())} IST`;
+  return {
+    endDate,
+    endDay: Number(endDate.slice(-2)),
+    mtdDays: Number(endDate.slice(-2)),
+    syncedAt: new Date().toISOString(),
+    syncedLabel,
+    google: false,
+    clients,
+    accounts: accounts.map((account) => ({
+      id: `fb${account.id}`,
+      client: `c${account.id}`,
+      platform: "meta",
+      name: account.name,
+      externalId: account.id,
+      currency: account.currency === "AED" ? "AED" : "INR",
+      days: account.days,
+    })),
+  };
+}
+
+async function syncLive() {
+  const key = process.env.WINDSOR_API_KEY;
+  const cachePath = path.join(dataDir, "live.json");
+  if (!key) return null;
+  const endDate = kolkataDate(-1);
+  const startDate = kolkataDate(-45);
+  try {
+    const url = new URL("https://connectors.windsor.ai/facebook");
+    url.searchParams.set("api_key", key);
+    url.searchParams.set("fields", "date,account_id,account_name,account_currency,spend,impressions,link_clicks,actions_lead");
+    url.searchParams.set("date_from", startDate);
+    url.searchParams.set("date_to", endDate);
+    const response = await fetch(url);
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("live sync failed", response.status, String(payload.error || payload.message || "request failed"));
+      return null;
+    }
+    const rows = Array.isArray(payload) ? payload : payload.data || [];
+    const model = buildLive(rows, endDate);
+    fs.mkdirSync(dataDir, { recursive: true });
+    fs.writeFileSync(cachePath, JSON.stringify(model));
+    console.error("live sync", model.accounts.length, "accounts", rows.length, "rows", "through", endDate);
+    return model;
+  } catch (error) {
+    console.error("live sync failed", String(error.message || error).replace(/api_key=[^&\s]+/gi, "api_key=redacted"));
+    return null;
+  }
+}
+
+function readLive() {
+  const cachePath = path.join(dataDir, "live.json");
+  if (!fs.existsSync(cachePath)) return { clients: [], accounts: [], google: false };
+  return JSON.parse(fs.readFileSync(cachePath, "utf8"));
+}
+
+function sendJson(res, status, body) {
+  const raw = JSON.stringify(body);
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  res.end(raw);
+}
+
+function readBody(req, limit) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > limit) {
+        reject(Object.assign(new Error("too large"), { status: 413 }));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
+
+function fileFor(urlPath) {
+  const rel = urlPath === "/" ? "index.html" : urlPath.replace(/^[/\\]+/, "");
+  const resolved = path.resolve(root, rel);
+  if (resolved !== root && !resolved.startsWith(root + path.sep)) return null;
+  return resolved;
+}
+
+async function sendTelegram(text) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chat = process.env.INTERNAL_CHAT_ID;
+  if (!token || !chat) return { delivered: false, error: "telegram_not_configured" };
+  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chat, text, disable_web_page_preview: true }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload.ok) return { delivered: false, error: "telegram_failed" };
+  return { delivered: true, error: null };
+}
+
+async function handleApi(req, res, pathname) {
+  if (req.method === "GET" && pathname === "/api/live") {
+    return sendJson(res, 200, readLive());
+  }
+
+  if (req.method === "GET" && pathname === "/api/state") {
+    const row = db.prepare("SELECT data FROM workspace WHERE id = 1").get();
+    if (!row) return sendJson(res, 200, null);
+    return sendJson(res, 200, JSON.parse(row.data));
+  }
+
+  if (req.method === "POST" && pathname === "/api/state") {
+    const raw = await readBody(req, 2_000_000);
+    const data = JSON.parse(raw.toString("utf8"));
+    if (!data || typeof data !== "object" || !Array.isArray(data.staff)) return sendJson(res, 400, { error: "invalid workspace" });
+    db.prepare("INSERT INTO workspace (id, data, updated_at) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at")
+      .run(JSON.stringify(data), new Date().toISOString());
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (req.method === "POST" && pathname === "/api/outbox") {
+    const data = JSON.parse((await readBody(req, 200_000)).toString("utf8"));
+    const text = String(data.text || "");
+    if (!text.trim()) return sendJson(res, 400, { error: "empty" });
+    if (blocked(text)) {
+      db.prepare("INSERT INTO outbox (client_id, kind, body, delivered, error, created_at) VALUES (?,?,?,?,?,?)")
+        .run(String(data.client || ""), String(data.kind || "daily"), "[blocked]", 0, "denylist", new Date().toISOString());
+      return sendJson(res, 422, { ok: false, blocked: true });
+    }
+    const delivery = await sendTelegram(text);
+    db.prepare("INSERT INTO outbox (client_id, kind, body, delivered, error, created_at) VALUES (?,?,?,?,?,?)")
+      .run(String(data.client || ""), String(data.kind || "daily"), text, delivery.delivered ? 1 : 0, delivery.error, new Date().toISOString());
+    return sendJson(res, 200, { ok: true, delivered: delivery.delivered });
+  }
+
+  if (req.method === "POST" && pathname === "/api/pdf") {
+    const bytes = await readBody(req, 12_000_000);
+    if (bytes.subarray(0, 5).toString("utf8") !== "%PDF-") return sendJson(res, 415, { error: "not a pdf" });
+    const id = String(req.headers["x-pdf-id"] || "").replace(/[^a-z0-9]/gi, "").slice(0, 80);
+    if (!id) return sendJson(res, 400, { error: "missing id" });
+    const client = String(req.headers["x-client"] || "client").replace(/[^a-z0-9-]/gi, "").slice(0, 32);
+    const filename = decodeURIComponent(String(req.headers["x-filename"] || "report.pdf")).replace(/[^a-zA-Z0-9._-]/g, "_");
+    fs.writeFileSync(path.join(pdfDir, `${id}.pdf`), bytes);
+    db.prepare("INSERT INTO pdfs (id, client_id, filename, created_at) VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET filename = excluded.filename, created_at = excluded.created_at")
+      .run(id, client, filename, new Date().toISOString());
+    return sendJson(res, 200, { ok: true, url: `/api/pdf/${id}` });
+  }
+
+  const pdf = pathname.match(/^\/api\/pdf\/([a-z0-9]+)$/i);
+  if (req.method === "GET" && pdf) {
+    const row = db.prepare("SELECT filename FROM pdfs WHERE id = ?").get(pdf[1]);
+    const file = path.join(pdfDir, `${pdf[1]}.pdf`);
+    if (!row || !fs.existsSync(file)) return sendJson(res, 404, { error: "not found" });
+    res.writeHead(200, {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="${row.filename}"`,
+      "Cache-Control": "private, max-age=3600",
+    });
+    fs.createReadStream(file).pipe(res);
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/review") {
+    const data = JSON.parse((await readBody(req, 200_000)).toString("utf8"));
+    const key = process.env.OPENAI_API_KEY;
+    if (!key) return sendJson(res, 200, { summary: null, mode: "rules" });
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: "You are a senior performance-marketing analyst. Use only the supplied metrics. Never mention internal tool names. Return JSON with summary and overall_severity (low, medium, or high)." },
+          { role: "user", content: JSON.stringify({ client: data.name, currency: data.currency, metrics: data.metrics }) },
+        ],
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    const content = payload.choices?.[0]?.message?.content;
+    if (!response.ok || !content) return sendJson(res, 200, { summary: null, mode: "rules" });
+    const parsed = JSON.parse(content);
+    return sendJson(res, 200, { summary: String(parsed.summary || ""), severity: parsed.overall_severity || null, mode: "openai" });
+  }
+
+  sendJson(res, 404, { error: "not found" });
+}
+
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url || "/", "http://localhost");
+  if (url.pathname.startsWith("/api/")) {
+    handleApi(req, res, url.pathname).catch((error) => {
+      console.error(error);
+      if (res.headersSent) return;
+      sendJson(res, error.status || 500, { error: "request failed" });
+    });
+    return;
+  }
+
+  const file = fileFor(decodeURIComponent(url.pathname));
+  if (!file) {
+    res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Bad request");
+    return;
+  }
+  fs.stat(file, (err, stat) => {
+    const target = !err && stat.isFile() ? file : path.join(root, "index.html");
+    const ext = path.extname(target).toLowerCase();
+    res.writeHead(200, {
+      "Content-Type": types[ext] || "application/octet-stream",
+      "Cache-Control": ext === ".html" || ext === ".js" ? "no-cache" : "public, max-age=86400",
+      "X-Content-Type-Options": "nosniff",
+    });
+    fs.createReadStream(target).pipe(res);
+  });
+});
+
+await syncLive();
+server.listen(port, host, () => {
+  console.log(`CreativHeads Ad Reports listening on ${port}`);
+});

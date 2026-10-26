@@ -1,0 +1,14 @@
+{
+  "name": "creativheads-ad-reports",
+  "version": "3.0.0",
+  "private": true,
+  "description": "CreativHeads Ad Reports workspace. Hostinger Node.js web app: npm start, listens on PORT.",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}
