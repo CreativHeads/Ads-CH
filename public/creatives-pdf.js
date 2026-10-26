@@ -1,5 +1,8 @@
 // Branded CreativHeads performance report PDF, built in the browser with pdf-lib.
-// Layout: header + totals, spend by branch, campaign summary, then each campaign -> each location -> its creatives.
+// Theme follows the CreativHeads weekly report: light-blue logo header box, rounded tables
+// (blue headers on the summary page, black on detail pages), blue section titles, and
+// full-width creative cards with "Label: value" lines.
+// Layout: totals, spend by branch, campaign summary, then each campaign -> each location -> its creatives.
 let deps = null;
 
 function loadScript(src) {
@@ -15,7 +18,7 @@ async function dependencies() {
   if (!deps) deps = (async () => {
     if (!window.PDFLib) await loadScript("/vendor/pdf-lib.min.js");
     if (!window.fontkit) await loadScript("/vendor/fontkit.umd.min.js");
-    const bytes = await Promise.all(["/assets/hanken-regular.ttf", "/assets/hanken-semibold.ttf", "/assets/creativheads-logo.png"].map(async (url) => {
+    const bytes = await Promise.all(["/assets/hanken-regular.ttf", "/assets/hanken-semibold.ttf", "/assets/creativheads-logo.png?v=2"].map(async (url) => {
       const r = await fetch(url);
       if (!r.ok) throw new Error("PDF asset could not load");
       return r.arrayBuffer();
@@ -35,6 +38,13 @@ async function fetchImage(url) {
   }
 }
 
+// SVG path for a rounded rectangle with its top-left at 0,0 (SVG y grows downward).
+function roundedPath(w, h, r, corners = "all") {
+  const tl = corners === "bottom" ? 0 : r, tr = tl;
+  const bl = corners === "top" ? 0 : r, br = bl;
+  return `M ${tl} 0 H ${w - tr} Q ${w} 0 ${w} ${tr} V ${h - br} Q ${w} ${h} ${w - br} ${h} H ${bl} Q 0 ${h} 0 ${h - bl} V ${tl} Q 0 0 ${tl} 0 Z`;
+}
+
 export async function buildReportPdf(model) {
   const { PDFLib, fontkit, regular, bold, logo } = await dependencies();
   const { PDFDocument, rgb } = PDFLib;
@@ -48,10 +58,10 @@ export async function buildReportPdf(model) {
   const logoImg = await doc.embedPng(logo);
 
   const hex = (h) => rgb(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255);
-  const C = { ink: hex("#1b2430"), muted: hex("#6b7480"), navy: hex("#12213f"), blue: hex("#1a6ff0"), line: hex("#dde2e8"), light: hex("#f3f6fa"), white: rgb(1, 1, 1), green: hex("#1f8f7a") };
-  const W = 595.28, H = 841.89, M = 38, CW = W - 2 * M;
+  const C = { ink: hex("#111111"), muted: hex("#5f6672"), blue: hex("#0c75fd"), tint: hex("#e6f0ff"), black: hex("#111111"), line: hex("#cccccc"), rule: hex("#dddddd"), white: rgb(1, 1, 1), photo: hex("#eef1f5") };
+  const W = 595.28, H = 841.89, M = 40, CW = W - 2 * M, BOTTOM = 56;
   const sym = model.currency === "AED" ? "AED " : "Rs ";
-  const money = (v, d) => (v == null ? "—" : sym + v.toLocaleString("en-IN", { minimumFractionDigits: d ?? 2, maximumFractionDigits: d ?? 2 }));
+  const money = (v, d) => (v == null ? "-" : sym + v.toLocaleString("en-IN", { minimumFractionDigits: d ?? 2, maximumFractionDigits: d ?? 2 }));
   const num = (v) => v.toLocaleString("en-IN");
 
   // thumbnails, fetched once
@@ -70,6 +80,7 @@ export async function buildReportPdf(model) {
   const width = (s, size, f = font) => f.widthOfTextAtSize(String(s), size);
   const text = (s, x, yy, size = 9, f = font, color = C.ink) => page.drawText(String(s), { x, y: yy, size, font: f, color });
   const right = (s, xr, yy, size = 9, f = font, color = C.ink) => text(s, xr - width(s, size, f), yy, size, f, color);
+  const center = (s, cx, yy, size = 9, f = font, color = C.ink) => text(s, cx - width(s, size, f) / 2, yy, size, f, color);
   const fit = (s, max, size, f = font) => {
     s = String(s ?? "");
     if (width(s, size, f) <= max) return s;
@@ -87,89 +98,106 @@ export async function buildReportPdf(model) {
     if (out.length > lines) { out.length = lines; out[lines - 1] = fit(out[lines - 1] + "…", max, size, f); }
     return out;
   };
-  const rect = (x, yy, w, h, color, border) => page.drawRectangle({ x, y: yy, width: w, height: h, color, borderColor: border, borderWidth: border ? 0.6 : 0 });
+  // rounded box; x/top in PDF coordinates (top = upper edge)
+  const box = (x, top, w, h, { fill, border, r = 7, corners = "all", bw = 0.8 } = {}) =>
+    page.drawSvgPath(roundedPath(w, h, r, corners), { x, y: top, color: fill, borderColor: border, borderWidth: border ? bw : 0 });
+  const vline = (x, y1, y2, color = C.rule) => page.drawLine({ start: { x, y: y1 }, end: { x, y: y2 }, thickness: 0.6, color });
+  const hline = (x1, x2, yy, color = C.rule) => page.drawLine({ start: { x: x1, y: yy }, end: { x: x2, y: yy }, thickness: 0.6, color });
 
   function newPage(first = false) {
     page = doc.addPage([W, H]);
     if (first) {
-      const lh = 40, lw = (logoImg.width / logoImg.height) * lh;
-      page.drawImage(logoImg, { x: M, y: H - M - lh, width: lw, height: lh });
-      right("PERFORMANCE REPORT", W - M, H - M - 10, 8, strong, C.blue);
-      right("Prepared by CreativHeads", W - M, H - M - 25, 12.5, strong, C.ink);
-      right("for " + model.account, W - M, H - M - 38, 8.5, font, C.muted);
-      page.drawLine({ start: { x: M, y: H - M - 52 }, end: { x: W - M, y: H - M - 52 }, thickness: 1.2, color: C.blue });
-      y = H - M - 80;
+      const top = H - 34, bh = 54;
+      box(M, top, CW, bh, { fill: C.tint, border: C.blue, r: 8, bw: 1.1 });
+      const lh = 34, lw = (logoImg.width / logoImg.height) * lh;
+      page.drawImage(logoImg, { x: M + 10, y: top - bh / 2 - lh / 2, width: lw, height: lh });
+      right("PERFORMANCE REPORT", W - M - 12, top - 15, 8, strong, C.blue);
+      right("Prepared by CreativHeads", W - M - 12, top - 30, 12, strong, C.ink);
+      right("for " + model.account, W - M - 12, top - 42, 8, font, C.muted);
+      y = top - bh - 34;
     } else {
-      const lh = 15, lw = (logoImg.width / logoImg.height) * lh;
-      page.drawImage(logoImg, { x: W - M - lw, y: H - M + 4 - lh, width: lw, height: lh });
-      y = H - M - 26;
+      const lh = 18, lw = (logoImg.width / logoImg.height) * lh;
+      page.drawImage(logoImg, { x: W - M - lw, y: H - 30 - lh, width: lw, height: lh });
+      y = H - 74;
     }
   }
-  const ensure = (h) => { if (y - h < 52) newPage(); };
+  const ensure = (h) => { if (y - h < BOTTOM) newPage(); };
 
-  function heading(s, size = 15, color = C.navy) {
-    ensure(size + 30);
+  function heading(s, size = 15, color = C.blue) {
+    ensure(size + 40);
     text(s, M, y, size, strong, color);
-    y -= size + 9;
+    y -= size + 10;
   }
 
-  // generic table: cols = [{label, w, align}], rows = [[...cells]], bold last row when total
-  function table(cols, rows, { total = false, rowH = 18 } = {}) {
-    const head = () => {
-      rect(M, y - rowH + 5, CW, rowH, C.navy);
-      let x = M;
-      for (const c of cols) {
-        const label = fit(c.label, c.w - 10, 7.5, strong);
-        if (c.align === "left") text(label, x + 6, y - 7, 7.5, strong, C.white);
-        else right(label, x + c.w - 6, y - 7, 7.5, strong, C.white);
-        x += c.w;
-      }
-      y -= rowH;
-    };
-    ensure(rowH * 2 + 8);
-    head();
-    rows.forEach((row, i) => {
-      if (y - rowH < 52) { newPage(); head(); }
-      const isTotal = total && i === rows.length - 1;
-      if (isTotal) rect(M, y - rowH + 5, CW, rowH, C.light);
-      let x = M;
-      row.forEach((v, j) => {
-        const c = cols[j], f = isTotal || j === 0 ? strong : font;
-        const s = fit(v, c.w - 10, 8, f);
-        if (c.align === "left") text(s, x + 6, y - 7, 8, f);
-        else right(s, x + c.w - 6, y - 7, 8, f);
+  // rounded table, centered cells; headColor blue on the summary page, black on detail pages
+  function table(cols, rows, { headColor = C.black, total = false, rowH = 19, headH = 20, inset = 0 } = {}) {
+    const x0 = M + inset, tw = cols.reduce((a, c) => a + c.w, 0);
+    let first = true;
+    const drawChunk = (chunk, isLast) => {
+      const h = headH + chunk.length * rowH;
+      box(x0, y, tw, h, { fill: C.white, border: C.line, r: 7 });
+      box(x0, y, tw, headH, { fill: headColor, r: 7, corners: "top" });
+      let x = x0;
+      cols.forEach((c, j) => {
+        const label = fit(c.label, c.w - 8, 8, font);
+        if (c.align === "left") text(label, x + 7, y - headH + 7, 8, font, C.white);
+        else center(label, x + c.w / 2, y - headH + 7, 8, font, C.white);
+        if (j) vline(x, y - headH, y - h + 0.5);
         x += c.w;
       });
-      page.drawLine({ start: { x: M, y: y - rowH + 5 }, end: { x: W - M, y: y - rowH + 5 }, thickness: 0.5, color: C.line });
-      y -= rowH;
-    });
-    y -= 10;
+      chunk.forEach((row, i) => {
+        const ry = y - headH - i * rowH;
+        if (i) hline(x0, x0 + tw, ry);
+        const isTotal = total && isLast && i === chunk.length - 1;
+        let cx = x0;
+        row.forEach((v, j) => {
+          const c = cols[j], f = isTotal ? strong : font;
+          const s = fit(v, c.w - 8, 8.5, f);
+          if (c.align === "left") text(s, cx + 7, ry - rowH + 6.5, 8.5, f);
+          else center(s, cx + c.w / 2, ry - rowH + 6.5, 8.5, f);
+          cx += c.w;
+        });
+      });
+      y -= h + 18;
+    };
+    let rest = rows;
+    while (rest.length) {
+      const fitRows = Math.max(1, Math.floor((y - BOTTOM - headH - (first ? 0 : 0)) / rowH));
+      if (fitRows < 2 && rest.length > 1) { newPage(); continue; }
+      const chunk = rest.slice(0, fitRows);
+      rest = rest.slice(fitRows);
+      drawChunk(chunk, !rest.length);
+      if (rest.length) newPage();
+      first = false;
+    }
   }
-  const metricCols = (firstLabel, firstW) => {
-    const rest = CW - firstW, parts = [0.6, 1.35, 1.15, 0.85, 0.8, 0.9, 1.15, 0.7];
+  const metricCols = (firstLabel, firstW, totalW = CW) => {
+    const rest = totalW - firstW, parts = [0.6, 1.4, 1.2, 0.85, 0.8, 0.95, 1.15, 0.7];
     const labels = ["Ads", "Spend", "Impr.", "Clicks", "CTR", "WA conv.", "Cost/conv.", "Leads"];
     const sum = parts.reduce((a, b) => a + b, 0);
-    return [{ label: firstLabel, w: firstW, align: "left" }, ...labels.map((l, i) => ({ label: l, w: (rest * parts[i]) / sum }))];
+    return [{ label: firstLabel, w: firstW }, ...labels.map((l, i) => ({ label: l, w: (rest * parts[i]) / sum }))];
   };
   const metricCells = (t) => [num(t.ads), money(t.spend), num(t.impressions), num(t.clicks), t.ctr.toFixed(2) + "%", num(t.conv), money(t.cpc), num(t.leads)];
 
   function image(url, x, yy, w, h) {
-    rect(x, yy, w, h, C.light);
     const img = images.get(url);
     if (!img) {
-      text("No preview", x + (w - width("No preview", 6.5)) / 2, yy + h / 2 - 2, 6.5, font, C.muted);
+      page.drawRectangle({ x, y: yy, width: w, height: h, color: C.photo });
+      center("No preview", x + w / 2, yy + h / 2 - 3, 7, font, C.muted);
       return;
     }
-    const k = Math.min(w / img.width, h / img.height);
+    const k = Math.min(w / img.width, h / img.height); // fit inside the frame, centred
+    page.drawRectangle({ x, y: yy, width: w, height: h, color: C.photo });
     page.drawImage(img, { x: x + (w - img.width * k) / 2, y: yy + (h - img.height * k) / 2, width: img.width * k, height: img.height * k });
   }
 
   // ---- page 1 ----
   newPage(true);
-  for (const line of wrap(model.title, CW, 19, strong, 2)) {
-    text(line, M + (CW - width(line, 19, strong)) / 2, y, 19, strong, C.ink);
-    y -= 24;
+  for (const line of wrap(model.title, CW, 20, strong, 2)) {
+    center(line, W / 2, y, 20, strong, C.ink);
+    y -= 25;
   }
+  y += 4;
   for (const line of wrap("CreativHeads Performance team. Ads with spend during " + model.period + " (totals for the period), grouped by campaign; inside each campaign every location is shown separately, sorted by spend (high to low). Thumbnails are stills; video ads are not playable in the PDF.", CW, 8.5, font, 3)) {
     text(line, M, y, 8.5, font, C.muted);
     y -= 12;
@@ -178,107 +206,102 @@ export async function buildReportPdf(model) {
   const t = model.totals;
   {
     const labels = ["Ads", "Spend", "Impressions", "Clicks", "CTR", "WA conv.", "Cost/conv.", "Leads"];
-    const vals = metricCells(t), w = CW / labels.length;
-    rect(M, y - 13, CW, 18, C.navy);
-    rect(M, y - 33, CW, 20, C.white, C.line);
-    labels.forEach((l, i) => {
-      text(l, M + i * w + (w - width(l, 7.5, strong)) / 2, y - 7, 7.5, strong, C.white);
-      text(vals[i], M + i * w + (w - width(vals[i], 9, strong)) / 2, y - 27, 9, strong, C.ink);
-    });
-    y -= 52;
+    const parts = [0.6, 1.3, 1.15, 0.8, 0.75, 0.95, 1.05, 0.65], tw = CW - 50, sum = parts.reduce((a, b) => a + b, 0);
+    table(labels.map((l, i) => ({ label: l, w: (tw * parts[i]) / sum })), [metricCells(t)], { headColor: C.blue, inset: 25 });
   }
+  y -= 4;
 
   if (model.hasBranches) {
     heading("Spend by branch", 11.5, C.ink);
-    table(metricCols("Branch", 120), [...model.branches.map((b) => [b.label, ...metricCells(b.t)]), ["Total", ...metricCells(t)]], { total: true });
+    table(metricCols("Branch", 118, CW - 20), [...model.branches.map((b) => [b.label, ...metricCells(b.t)]), ["Total", ...metricCells(t)]], { headColor: C.blue, total: true, inset: 10 });
     for (const line of wrap("Branch = the city in the ad set or ad name (KNR, CLT, EKM/Kochi, CBE/Coimbatore). WA conv. = WhatsApp / messaging conversations started.", CW, 7.5, font, 2)) {
-      text(line, M, y + 4, 7.5, font, C.muted);
+      text(line, M, y + 2, 7.5, font, C.muted);
       y -= 10;
     }
-    y -= 8;
+    y -= 10;
   }
 
   heading(`Campaign summary — ${num(t.ads)} ads`, 11.5, C.ink);
   for (const s of model.sections) {
-    const rowH = 48;
+    const rowH = 50;
     ensure(rowH + 4);
-    image(s.thumbs[0], M, y - rowH + 6, 38, rowH - 6);
-    image(s.thumbs[1] || s.thumbs[0], M + 41, y - rowH + 6, 38, rowH - 6);
-    const tx = M + 88, tw = CW - 88 - 150;
+    image(s.thumbs[0], M, y - rowH + 4, 40, rowH - 8);
+    image(s.thumbs[1] || s.thumbs[0], M + 43, y - rowH + 4, 40, rowH - 8);
+    const tx = M + 92, tw = CW - 92 - 150;
     const lines = wrap(s.name + ": " + s.adNames.join(", "), tw, 8.5, font, 3);
     lines.forEach((l, i) => {
       if (i === 0 && l.startsWith(s.name + ":")) {
-        text(s.name + ":", tx, y - 9, 8.5, strong);
-        text(l.slice(s.name.length + 1), tx + width(s.name + ":", 8.5, strong), y - 9, 8.5);
-      } else text(l, tx, y - 9 - i * 11, 8.5);
+        text(s.name + ":", tx, y - 11, 8.5, strong);
+        text(l.slice(s.name.length + 1), tx + width(s.name + ":", 8.5, strong), y - 11, 8.5);
+      } else text(l, tx, y - 11 - i * 11, 8.5);
     });
     const summary = [`${s.t.ads} ads · ${money(s.t.spend, 0)}`, `${num(s.t.conv)} WA conv. · ${money(s.t.cpc)}/conv.`, `${s.locs.map((l) => (l.code === "ALL" ? "All" : l.code)).join(", ")}`];
-    summary.forEach((l, i) => right(l, W - M, y - 9 - i * 11, 8, i === 0 ? strong : font, i === 2 ? C.muted : C.ink));
-    page.drawLine({ start: { x: M, y: y - rowH + 2 }, end: { x: W - M, y: y - rowH + 2 }, thickness: 0.5, color: C.line });
+    summary.forEach((l, i) => right(l, W - M, y - 11 - i * 11, 8, i === 0 ? strong : font, i === 2 ? C.muted : C.ink));
+    hline(M, W - M, y - rowH + 1);
     y -= rowH + 4;
   }
 
   // ---- campaign pages ----
-  const cardW = (CW - 10) / 2, cardH = 84;
-  newPage();
+  const cardH = 112, photo = 96;
   model.sections.forEach((s, i) => {
-    if (i > 0) {
-      if (y < H * 0.3) newPage();
-      else {
-        y -= 6;
-        page.drawLine({ start: { x: M, y: y + 12 }, end: { x: W - M, y: y + 12 }, thickness: 0.8, color: C.line });
-        y -= 10;
-      }
-    }
-    heading(s.name, 17, C.navy);
-    text(fit("Meta campaigns: " + s.metaCampaigns.join(" · "), CW, 8), M, y + 3, 8, font, C.muted);
-    y -= 14;
-    table(metricCols("Location", 120), [...s.locs.map((l) => [l.label, ...metricCells(l.t)]), ["Total", ...metricCells(s.t)]], { total: true });
+    if (i === 0 || y < H * 0.35) newPage();
+    else y -= 8;
+    heading(s.name, 17, C.blue);
+    text(fit("Meta campaigns: " + s.metaCampaigns.join(" · "), CW, 8), M, y + 4, 8, font, C.muted);
+    y -= 12;
+    table(metricCols("Location", 118, CW - 50), [...s.locs.map((l) => [l.label, ...metricCells(l.t)]), ["Total", ...metricCells(s.t)]], { total: true, inset: 25 });
 
     for (const l of s.locs) {
-      ensure(22 + cardH);
-      text(`${s.name} — ${l.label}`, M, y, 11.5, strong, C.green);
-      const sub = `${l.t.ads} ad${l.t.ads === 1 ? "" : "s"} · ${money(l.t.spend)} · ${num(l.t.conv)} WA conv. · ${money(l.t.cpc)}/conv. · ${num(l.t.leads)} leads`;
-      right(fit(sub, CW - width(`${s.name} — ${l.label}`, 11.5, strong) - 12, 7.5), W - M, y, 7.5, font, C.muted);
-      y -= 10;
-      l.ads.forEach((a, i) => {
-        const col = i % 2;
-        if (col === 0 && y - cardH - 6 < 52) {
+      ensure(24 + cardH);
+      text(`${s.name} — ${l.label}`, M, y, 12.5, strong, C.blue);
+      y -= 13;
+      text(fit(`Location totals: ${money(l.t.spend)} spend · ${num(l.t.conv)} WhatsApp conversations · ${money(l.t.cpc)} per conversation · ${num(l.t.leads)} leads`, CW, 8), M, y, 8, font, C.muted);
+      y -= 9;
+      l.ads.forEach((a, n) => {
+        if (y - cardH - 6 < BOTTOM) {
           newPage();
-          text(`${s.name} — ${l.label} (cont.)`, M, y, 11.5, strong, C.green);
-          y -= 10;
+          text(`${s.name} — ${l.label} (cont.)`, M, y, 12.5, strong, C.blue);
+          y -= 18;
         }
-        const x = M + col * (cardW + 10), top = y;
-        rect(x, top - cardH, cardW, cardH, C.white, C.line);
-        image(a.thumb, x + 5, top - cardH + 5, 60, cardH - 10);
-        const tx = x + 72, tw = cardW - 78;
+        const top = y;
+        box(M, top, CW, cardH, { fill: C.white, border: C.line, r: 7 });
+        image(a.thumb, M + 8, top - cardH + 8, photo, cardH - 16);
+        const tx = M + photo + 20, tw = CW - photo - 30;
+        text(fit(`${n + 1}. ${a.name}`, tw, 11, strong), tx, top - 18, 11, strong);
         const ctr = a.impressions ? ((a.clicks / a.impressions) * 100).toFixed(2) : "0.00";
-        text(fit(`${i + 1}. ${a.name}`, tw, 9, strong), tx, top - 14, 9, strong);
-        text(fit(`Ad set: ${a.adset}`, tw, 7), tx, top - 25, 7, font, C.muted);
-        const rows = [
-          [["Spend", money(a.spend)], ["Impr.", num(a.impressions)]],
-          [["Clicks", num(a.clicks)], ["CTR", ctr + "%"]],
-          [["WA conv.", num(a.conv)], ["Leads", num(a.leads)]],
-          [["Cost/conv.", money(a.conv ? a.spend / a.conv : null)]],
+        const lines = [
+          [["Campaign", a.campaign]],
+          [["Ad set", a.adset]],
+          [["Spend", money(a.spend)]],
+          [["Impressions", num(a.impressions)]],
+          [["Clicks", `${num(a.clicks)} (CTR ${ctr}%)`]],
+          [["WA conversations", num(a.conv)], ["Cost/conv.", money(a.conv ? a.spend / a.conv : null)], ["Leads", num(a.leads)]],
         ];
-        rows.forEach((pairs, r) => pairs.forEach(([k, v], c) => {
-          const px = tx + c * (tw / 2), py = top - 40 - r * 11;
-          text(k, px, py, 7.5, font, C.muted);
-          text(fit(v, tw / 2 - width(k, 7.5) - 6, 7.5, strong), px + width(k, 7.5) + 4, py, 7.5, strong);
-        }));
-        if (col === 1 || i === l.ads.length - 1) y -= cardH + 6;
+        lines.forEach((pairs, r) => {
+          let x = tx;
+          const yy = top - 32 - r * 12.5;
+          pairs.forEach(([k, v], j) => {
+            if (j) { text(" · ", x, yy, 8.5); x += width(" · ", 8.5); }
+            text(k + ": ", x, yy, 8.5, strong);
+            x += width(k + ": ", 8.5, strong);
+            const val = fit(v, tx + tw - x, 8.5);
+            text(val, x, yy, 8.5);
+            x += width(val, 8.5);
+          });
+        });
+        y -= cardH + 7;
       });
-      y -= 8;
+      y -= 10;
     }
   });
 
   // footers with page x/y
   const pages = doc.getPages();
   pages.forEach((p, i) => {
-    p.drawLine({ start: { x: M, y: 34 }, end: { x: W - M, y: 34 }, thickness: 0.8, color: C.blue });
-    p.drawText(fit(model.title, CW - 190, 7), { x: M, y: 22, size: 7, font, color: C.muted });
+    p.drawLine({ start: { x: M, y: 36 }, end: { x: W - M, y: 36 }, thickness: 0.9, color: C.blue });
+    p.drawText(fit(model.title, CW - 200, 7.5), { x: M, y: 24, size: 7.5, font, color: C.ink });
     const label = `CreativHeads · Performance Report · page ${i + 1}/${pages.length}`;
-    p.drawText(label, { x: W - M - width(label, 7), y: 22, size: 7, font, color: C.blue });
+    p.drawText(label, { x: W - M - width(label, 7.5), y: 24, size: 7.5, font, color: C.blue });
   });
   return doc.save();
 }
