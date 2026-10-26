@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { createAuth } from "./auth.js";
 
 // Hostinger's LiteSpeed loader require()s this file, so no top-level await.
 const require = createRequire(import.meta.url);
@@ -101,6 +102,9 @@ if (DatabaseSync) {
     db = null;
   }
 }
+
+// readBody/sendJson are function declarations below, so they are hoisted and safe to pass here.
+const auth = db ? createAuth(db, { readBody, sendJson }) : null;
 
 const DENY = ["windsor", "openai", "gpt", "chatgpt", "supabase", "vercel", "telegram", "birch", "bïrch", "meta api"];
 function blocked(text) {
@@ -473,10 +477,22 @@ async function handleApi(req, res, pathname) {
   sendJson(res, 404, { error: "not found" });
 }
 
+const PUBLIC_PAGES = new Set(["/login", "/login.html"]);
+
+async function handleRequestApi(req, res, pathname) {
+  if (!auth) return sendJson(res, 503, { error: "database unavailable" });
+  if (await auth.handle(req, res, pathname)) return;
+  const user = auth.currentUser(req);
+  if (!user) return sendJson(res, 401, { error: "signed out" });
+  // read-only staff can look at everything but change nothing
+  if (req.method !== "GET" && user.role === "staff") return sendJson(res, 403, { error: "Read-only account." });
+  return handleApi(req, res, pathname);
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
   if (url.pathname.startsWith("/api/")) {
-    handleApi(req, res, url.pathname).catch((error) => {
+    handleRequestApi(req, res, url.pathname).catch((error) => {
       console.error(error);
       if (res.headersSent) return;
       sendJson(res, error.status || 500, { error: "request failed" });
@@ -484,7 +500,16 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const file = fileFor(url.pathname === "/creatives" ? "/creatives.html" : decodeURIComponent(url.pathname));
+  // Every page needs a login, except the login page itself and its fonts/logo.
+  const open = PUBLIC_PAGES.has(url.pathname) || /^\/assets\/(hanken-[a-z]+\.ttf|creativheads-logo\.png)$/.test(url.pathname);
+  if (!open && !(auth && auth.currentUser(req))) {
+    const next = url.pathname === "/" ? "" : `?next=${encodeURIComponent(url.pathname + url.search)}`;
+    res.writeHead(302, { Location: `/login${next}`, "Cache-Control": "no-store" });
+    res.end();
+    return;
+  }
+  const pages = { "/creatives": "/creatives.html", "/login": "/login.html", "/team": "/team.html" };
+  const file = fileFor(pages[url.pathname] || decodeURIComponent(url.pathname));
   if (!file) {
     res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Bad request");

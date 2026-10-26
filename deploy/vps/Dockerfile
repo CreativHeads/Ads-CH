@@ -1,7 +1,7 @@
 # CreativHeads Ad Reports on the VPS (ads.creativheads.com).
 FROM node:22-alpine
 WORKDIR /app
-COPY package.json server.js ./
+COPY package.json server.js auth.js ./
 COPY public ./public
 ENV NODE_ENV=production PORT=3000 DATA_DIR=/data
 EXPOSE 3000

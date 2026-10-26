@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#153e35" />
+  <meta name="robots" content="noindex" />
+  <title>Sign in · CreativHeads Ad Reports</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23153e35'/%3E%3Cpath d='M18 45V30h7v15m7 0V20h7v25m7 0V12h7v33' fill='%23d9ecc3'/%3E%3C/svg%3E" />
+  <style>
+    @font-face{font-family:Hanken;src:url('/assets/hanken-regular.ttf') format('truetype');font-weight:400;font-display:swap}
+    @font-face{font-family:Hanken;src:url('/assets/hanken-semibold.ttf') format('truetype');font-weight:600 900;font-display:swap}
+    :root{--ink:#202c29;--muted:#6f7872;--forest:#153e35;--lime:#ddedcb;--line:#e3e7e1;--canvas:#f7f8f5;--red:#b25242}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--canvas);color:var(--ink);font:15px/1.45 Hanken,Arial,sans-serif;padding:24px 16px}
+    .card{width:100%;max-width:400px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:32px 28px;box-shadow:0 10px 40px rgba(21,62,53,.07)}
+    .logo{display:block;height:34px;margin:0 auto 22px}
+    h1{margin:0 0 4px;font-size:22px;font-weight:600;text-align:center;color:var(--forest)}
+    p.sub{margin:0 0 22px;text-align:center;color:var(--muted);font-size:14px}
+    label{display:block;font-size:13px;font-weight:600;margin:14px 0 5px}
+    input{width:100%;font:inherit;padding:11px 12px;border:1px solid #cfd6cf;border-radius:10px;background:#fff;min-height:44px}
+    input:focus{outline:2px solid var(--forest);outline-offset:1px;border-color:var(--forest)}
+    button{width:100%;margin-top:22px;font:inherit;font-weight:600;padding:12px;border:0;border-radius:10px;background:var(--forest);color:#fff;cursor:pointer;min-height:46px}
+    button:disabled{opacity:.6;cursor:default}
+    .error{display:none;margin-top:14px;padding:10px 12px;border-radius:10px;background:#fbefec;color:var(--red);font-size:13.5px}
+    .hint{margin-top:16px;color:var(--muted);font-size:12.5px;text-align:center}
+    [hidden]{display:none!important}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="/assets/creativheads-logo.png?v=2" alt="CreativHeads" />
+    <form id="login">
+      <h1>Sign in</h1>
+      <p class="sub">CreativHeads Ad Reports</p>
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required />
+      <button type="submit">Sign in</button>
+      <div class="error" role="alert"></div>
+      <p class="hint">Forgot your password? Ask a workspace admin to reset it.</p>
+    </form>
+    <form id="setup" hidden>
+      <h1>Create the first admin</h1>
+      <p class="sub">No accounts exist yet. Enter the setup code from the server log, then choose your login.</p>
+      <label for="code">Setup code</label>
+      <input id="code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" required />
+      <label for="s-name">Your name</label>
+      <input id="s-name" name="name" autocomplete="name" required />
+      <label for="s-username">Username</label>
+      <input id="s-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+      <label for="s-password">Password (at least 8 characters)</label>
+      <input id="s-password" name="password" type="password" autocomplete="new-password" minlength="8" required />
+      <button type="submit">Create admin and sign in</button>
+      <div class="error" role="alert"></div>
+    </form>
+  </main>
+  <script>
+    (function () {
+      var next = new URLSearchParams(location.search).get("next") || "/";
+      if (!/^\/(?!\/)/.test(next)) next = "/"; // only same-site paths
+      function go() { location.replace(next); }
+      function submit(form, url) {
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          var button = form.querySelector("button"), error = form.querySelector(".error");
+          button.disabled = true;
+          error.style.display = "none";
+          var body = Object.fromEntries(new FormData(form));
+          fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
+            .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+            .then(function (r) {
+              if (r.ok) return go();
+              error.textContent = r.body.error || "Could not sign in.";
+              error.style.display = "block";
+              button.disabled = false;
+            })
+            .catch(function () {
+              error.textContent = "Could not reach the server. Try again.";
+              error.style.display = "block";
+              button.disabled = false;
+            });
+        });
+      }
+      submit(document.getElementById("login"), "/api/auth/login");
+      submit(document.getElementById("setup"), "/api/auth/setup");
+      fetch("/api/auth/me").then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); }).then(function (r) {
+        if (r.ok) return go();
+        if (r.body.setupNeeded) {
+          document.getElementById("login").hidden = true;
+          document.getElementById("setup").hidden = false;
+        }
+        document.querySelector("form:not([hidden]) input").focus();
+      }).catch(function () {});
+    })();
+  </script>
+</body>
+</html>

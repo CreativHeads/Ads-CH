@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#153e35" />
+  <meta name="robots" content="noindex" />
+  <title>Team &amp; logins · CreativHeads</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23153e35'/%3E%3Cpath d='M18 45V30h7v15m7 0V20h7v25m7 0V12h7v33' fill='%23d9ecc3'/%3E%3C/svg%3E" />
+  <style>
+    @font-face{font-family:Hanken;src:url('/assets/hanken-regular.ttf') format('truetype');font-weight:400;font-display:swap}
+    @font-face{font-family:Hanken;src:url('/assets/hanken-semibold.ttf') format('truetype');font-weight:600 900;font-display:swap}
+    :root{--ink:#202c29;--muted:#6f7872;--forest:#153e35;--lime:#ddedcb;--line:#e3e7e1;--canvas:#f7f8f5;--red:#b25242;--amber:#9a702e}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--canvas);color:var(--ink);font:14px/1.45 Hanken,Arial,sans-serif}
+    .bar{background:var(--forest);color:#fff;padding:12px 24px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+    .bar h1{margin:0;font-size:18px;font-weight:600}
+    .bar a{color:var(--lime);text-decoration:none;font-size:13px}
+    .bar .who{margin-left:auto;font-size:13px;color:#cfe0d6}
+    .bar button{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
+    main{max-width:1000px;margin:0 auto;padding:24px 16px 60px}
+    section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px}
+    h2{margin:0 0 4px;font-size:17px;color:var(--forest)}
+    p.sub{margin:0 0 14px;color:var(--muted);font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 14px;align-items:end}
+    label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600}
+    input,select{font:inherit;font-weight:400;padding:8px 10px;border:1px solid #cfd6cf;border-radius:9px;background:#fff;min-height:38px}
+    button{font:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid var(--forest);background:var(--forest);color:#fff;padding:8px 14px;min-height:38px}
+    button.ghost{background:#fff;color:var(--forest)}
+    button.danger{background:#fff;color:var(--red);border-color:#e3bdb5}
+    button:disabled{opacity:.55;cursor:default}
+    .scroll{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;min-width:760px}
+    th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line)}
+    td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+    td small{display:block;color:var(--muted);font-size:12px}
+    .badge{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;background:#eef3ea;color:var(--forest)}
+    .badge.off{background:#f6ece9;color:var(--red)}
+    .actions{display:flex;gap:6px;flex-wrap:wrap}
+    .msg{display:none;margin-top:12px;padding:9px 12px;border-radius:9px;font-size:13px}
+    .msg.ok{display:block;background:#eef6e8;color:#2c5b28}
+    .msg.err{display:block;background:#fbefec;color:var(--red)}
+    .roles{margin:0;padding-left:18px;color:var(--muted);font-size:13px}
+    [hidden]{display:none!important}
+    @media (max-width:600px){.bar{padding:12px 16px}.bar .who{margin-left:0;width:100%}}
+  </style>
+</head>
+<body>
+  <header class="bar">
+    <a href="/">&larr; Ad Reports</a>
+    <h1>Team &amp; logins</h1>
+    <span class="who" id="who"></span>
+    <button type="button" id="logout">Sign out</button>
+  </header>
+  <main>
+    <section>
+      <h2>Your password</h2>
+      <p class="sub">Changing it signs you out on your other devices.</p>
+      <form id="password" class="grid">
+        <label>Current password <input type="password" name="current" autocomplete="current-password" required /></label>
+        <label>New password (8+ characters) <input type="password" name="next" autocomplete="new-password" minlength="8" required /></label>
+        <button type="submit">Change password</button>
+      </form>
+      <div class="msg" id="password-msg"></div>
+    </section>
+
+    <section id="admin" hidden>
+      <h2>Add a team member</h2>
+      <p class="sub">Share the username and password with them directly. They can change the password after signing in.</p>
+      <form id="add" class="grid">
+        <label>Name <input name="name" required maxlength="60" /></label>
+        <label>Username <input name="username" required autocapitalize="none" spellcheck="false" pattern="[A-Za-z0-9._\-]{3,32}" title="3–32 letters, numbers, dot, dash or underscore" /></label>
+        <label>Role
+          <select name="role">
+            <option value="staff">Read-only staff</option>
+            <option value="performance">Performance team</option>
+            <option value="admin">Admin</option>
+          </select>
+        </label>
+        <label>Password (8+ characters) <input name="password" type="text" minlength="8" required autocomplete="off" /></label>
+        <button type="submit">Add user</button>
+      </form>
+      <div class="msg" id="add-msg"></div>
+      <ul class="roles" style="margin-top:14px">
+        <li><strong>Admin</strong>: everything, including this page.</li>
+        <li><strong>Performance team</strong>: reviews, feedback, reports and sending; cannot manage users.</li>
+        <li><strong>Read-only staff</strong>: can view everything and download PDFs, but cannot change anything.</li>
+      </ul>
+    </section>
+
+    <section id="list" hidden>
+      <h2>Team members</h2>
+      <p class="sub" id="count"></p>
+      <div class="scroll"><table>
+        <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead>
+        <tbody id="users"></tbody>
+      </table></div>
+      <div class="msg" id="list-msg"></div>
+    </section>
+  </main>
+  <script>
+    (function () {
+      var me = null;
+      var ROLE = { admin: "Admin", performance: "Performance team", staff: "Read-only staff" };
+      var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+      var when = function (iso) { return iso ? new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Never"; };
+      function api(method, url, body) {
+        return fetch(url, { method: method, headers: body ? { "content-type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined })
+          .then(function (r) {
+            if (r.status === 401) { location.href = "/login?next=/team"; throw new Error("signed out"); }
+            return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || "Request failed"); return j; });
+          });
+      }
+      function show(id, text, ok) { var el = document.getElementById(id); el.textContent = text; el.className = "msg " + (ok ? "ok" : "err"); }
+
+      function load() {
+        api("GET", "/api/users").then(function (j) {
+          var rows = j.users.map(function (u) {
+            var self = u.id === me.id;
+            return "<tr data-id='" + u.id + "'><td><strong>" + esc(u.name) + (self ? " (you)" : "") + "</strong><small>" + esc(u.username) + "</small></td>" +
+              "<td><select data-act='role'" + (self ? " disabled" : "") + ">" + Object.keys(ROLE).map(function (r) { return "<option value='" + r + "'" + (u.role === r ? " selected" : "") + ">" + ROLE[r] + "</option>"; }).join("") + "</select></td>" +
+              "<td>" + (u.disabled ? "<span class='badge off'>Disabled</span>" : "<span class='badge'>Active</span>") + "</td>" +
+              "<td>" + when(u.last_login_at) + "</td>" +
+              "<td><div class='actions'><button type='button' class='ghost' data-act='reset'>Reset password</button>" +
+              (self ? "" : "<button type='button' class='ghost' data-act='toggle'>" + (u.disabled ? "Enable" : "Disable") + "</button><button type='button' class='danger' data-act='delete'>Delete</button>") +
+              "</div></td></tr>";
+          });
+          document.getElementById("users").innerHTML = rows.join("");
+          document.getElementById("count").textContent = j.users.length + " account" + (j.users.length === 1 ? "" : "s") + " · " + j.users.filter(function (u) { return !u.disabled; }).length + " active";
+          document.getElementById("list").hidden = false;
+        }).catch(function (e) { show("list-msg", e.message); });
+      }
+
+      document.getElementById("users").addEventListener("change", function (e) {
+        var sel = e.target.closest("select[data-act=role]");
+        if (!sel) return;
+        var id = sel.closest("tr").dataset.id;
+        api("PATCH", "/api/users/" + id, { role: sel.value }).then(function () { show("list-msg", "Role updated.", true); load(); }).catch(function (err) { show("list-msg", err.message); load(); });
+      });
+      document.getElementById("users").addEventListener("click", function (e) {
+        var b = e.target.closest("button[data-act]");
+        if (!b) return;
+        var tr = b.closest("tr"), id = tr.dataset.id, name = tr.querySelector("strong").textContent;
+        if (b.dataset.act === "reset") {
+          var pw = prompt("New password for " + name + " (at least 8 characters):");
+          if (!pw) return;
+          api("PATCH", "/api/users/" + id, { password: pw }).then(function () { show("list-msg", "Password reset for " + name + ". They are signed out everywhere until they use the new one.", true); }).catch(function (err) { show("list-msg", err.message); });
+        } else if (b.dataset.act === "toggle") {
+          var disable = b.textContent === "Disable";
+          api("PATCH", "/api/users/" + id, { disabled: disable }).then(function () { show("list-msg", name + (disable ? " can no longer sign in." : " can sign in again."), true); load(); }).catch(function (err) { show("list-msg", err.message); });
+        } else if (b.dataset.act === "delete") {
+          if (!confirm("Delete " + name + "? This cannot be undone.")) return;
+          api("DELETE", "/api/users/" + id).then(function () { show("list-msg", name + " was deleted.", true); load(); }).catch(function (err) { show("list-msg", err.message); });
+        }
+      });
+
+      document.getElementById("add").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var form = e.target, body = Object.fromEntries(new FormData(form));
+        api("POST", "/api/users", body).then(function (j) { show("add-msg", j.user.name + " can now sign in as " + j.user.username + ".", true); form.reset(); load(); }).catch(function (err) { show("add-msg", err.message); });
+      });
+      document.getElementById("password").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var form = e.target;
+        api("POST", "/api/auth/password", Object.fromEntries(new FormData(form))).then(function () { show("password-msg", "Password changed.", true); form.reset(); }).catch(function (err) { show("password-msg", err.message); });
+      });
+      document.getElementById("logout").addEventListener("click", function () {
+        api("POST", "/api/auth/logout").finally(function () { location.href = "/login"; });
+      });
+
+      api("GET", "/api/auth/me").then(function (j) {
+        me = j.user;
+        document.getElementById("who").textContent = me.name + " · " + ROLE[me.role];
+        if (me.role === "admin") { document.getElementById("admin").hidden = false; load(); }
+      }).catch(function () {});
+    })();
+  </script>
+</body>
+</html>

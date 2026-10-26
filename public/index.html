@@ -30,7 +30,13 @@
           boot(state);
         }).catch(function () { window.__LIVE = null; boot(state); });
       }
-      fetch("/api/state").then(function (response) { return response.ok ? response.json() : null; }).then(start).catch(function () { start(null); });
+      fetch("/api/auth/me").then(function (response) {
+        if (response.status === 401) { location.replace("/login"); throw new Error("signed out"); }
+        return response.json();
+      }).then(function (me) {
+        window.__USER = me.user;
+        fetch("/api/state").then(function (response) { return response.ok ? response.json() : null; }).then(start).catch(function () { start(null); });
+      }).catch(function () {});
     })();
   </script>
 </body>
