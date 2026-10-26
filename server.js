@@ -26,8 +26,23 @@ if (deployed && !process.env.DATA_DIR) recoverFromOldBuilds();
 // One-time move: copy the newest data/ left behind in an earlier build folder.
 function recoverFromOldBuilds() {
   try {
-    if (fs.existsSync(path.join(dataDir, "workspace.db"))) return;
     const versions = path.resolve(here, "..", "..");
+    if (fs.existsSync(path.join(dataDir, "workspace.db"))) {
+      // Read-only note of what older builds still hold, so lost workspace data can be found.
+      for (const name of fs.readdirSync(versions)) {
+        const file = path.join(versions, name, "nodejs", "data", "workspace.db");
+        if (!fs.existsSync(file) || !DatabaseSync) continue;
+        try {
+          const old = new DatabaseSync(file, { readOnly: true });
+          const row = old.prepare("SELECT updated_at, length(data) AS size FROM workspace WHERE id = 1").get();
+          old.close();
+          console.error("old build data", name, row ? `${row.updated_at} ${row.size} bytes` : "empty");
+        } catch (error) {
+          console.error("old build data", name, "unreadable");
+        }
+      }
+      return;
+    }
     const candidates = fs.readdirSync(versions)
       .map((name) => path.join(versions, name, "nodejs", "data"))
       .filter((dir) => dir !== path.join(here, "data") && fs.existsSync(path.join(dir, "workspace.db")))
