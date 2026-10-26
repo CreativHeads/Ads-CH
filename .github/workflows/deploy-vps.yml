@@ -1,0 +1,45 @@
+# Every push to main goes live at https://ads.creativheads.com.
+# The VPS_DEPLOY_KEY secret is a key that can only run /usr/local/bin/ad-reports-receive
+# on the VPS (see deploy/vps/setup-auto-deploy.sh).
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload app and rebuild
+        env:
+          DEPLOY_KEY: ${{ secrets.VPS_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::notice::VPS_DEPLOY_KEY secret is not set yet; skipping deploy (run deploy/vps/setup-auto-deploy.sh)"
+            exit 0
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          echo "187.126.125.145 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJNdxMctwfP3XkNXpLpdG/gvoMNo18M1VuLfzaCNflXM" > ~/.ssh/known_hosts
+          tar cf - package.json *.js public | ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes root@187.126.125.145
+
+      - name: Check the site answers
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS -o /dev/null https://ads.creativheads.com/login; then echo "live"; exit 0; fi
+            sleep 5
+          done
+          echo "ads.creativheads.com did not answer after the deploy" >&2
+          exit 1
