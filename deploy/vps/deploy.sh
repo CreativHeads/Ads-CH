@@ -34,7 +34,21 @@ if ! grep -q '^$DOMAIN ' $CADDYFILE; then
     exit 1
   fi
 fi
-docker exec casting-manager-caddy-1 caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile"
+# A redeploy of casting-manager replaces the Caddyfile with a new file; the running container
+# keeps the old one until it restarts, so a reload alone would not see the new site block.
+if docker exec casting-manager-caddy-1 grep -q '^$DOMAIN ' /etc/caddy/Caddyfile; then
+  docker exec casting-manager-caddy-1 caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+else
+  echo 'Caddy is reading an old copy of its Caddyfile; restarting it (a few seconds)'
+  docker restart casting-manager-caddy-1 >/dev/null
+  sleep 3
+fi"
+
+echo "==> Waiting for the HTTPS certificate"
+for i in $(seq 1 24); do
+  if curl -fsS -o /dev/null "https://$DOMAIN/"; then echo "HTTPS ok"; break; fi
+  sleep 5
+done
 
 echo "==> Checking the app from inside Caddy"
 $SSH 'docker exec casting-manager-caddy-1 wget -qO- http://ad-reports:3000/api/live | head -c 120; echo'
