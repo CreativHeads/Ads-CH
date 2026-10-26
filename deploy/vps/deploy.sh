@@ -51,5 +51,5 @@ for i in $(seq 1 24); do
 done
 
 echo "==> Checking the app from inside Caddy"
-$SSH 'docker exec casting-manager-caddy-1 wget -qO- http://ad-reports:3000/api/live | head -c 120; echo'
-echo "Done. Once DNS points $DOMAIN to 187.126.125.145, open https://$DOMAIN"
+$SSH 'docker exec casting-manager-caddy-1 wget -qO /dev/null http://ad-reports:3000/login && echo "app answers (login page)"'
+echo "Done: https://$DOMAIN"

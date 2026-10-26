@@ -24,7 +24,16 @@ $SSH 'cat > /usr/local/bin/ad-reports-receive && chmod 755 /usr/local/bin/ad-rep
 
 echo "==> Allowing the deploy key to run only the receiver"
 PUB=$(cat "$DEPLOY_KEY.pub")
-$SSH "grep -qF '$PUB' ~/.ssh/authorized_keys || echo 'restrict,command=\"/usr/local/bin/ad-reports-receive\" $PUB' >> ~/.ssh/authorized_keys"
+# Strip any earlier copy of this entry (including one glued onto another key's line when the
+# file had no final newline), make sure the file ends with a newline, then add it on its own line.
+$SSH "set -e
+F=~/.ssh/authorized_keys
+cp \$F \$F.bak-ad-reports
+sed -i 's| *restrict,command=\"/usr/local/bin/ad-reports-receive\".*\$||' \$F
+sed -i '/^[[:space:]]*\$/d' \$F
+[ -z \"\$(tail -c1 \$F)\" ] || echo >> \$F
+echo 'restrict,command=\"/usr/local/bin/ad-reports-receive\" $PUB' >> \$F
+grep -c 'ad-reports-receive' \$F | sed 's/^/deploy key entries: /'"
 
 echo "==> Deploying the current code once"
 bash deploy/vps/deploy.sh
