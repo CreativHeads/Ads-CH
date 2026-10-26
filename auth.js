@@ -55,10 +55,12 @@ export function createAuth(db, { readBody, sendJson }) {
   const activeAdmins = () => db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND disabled = 0").get().n;
 
   // First admin: until a user exists, /api/auth/setup accepts a one-time code printed to the server log.
-  let setupCode = null;
+  // The code is kept in the database so every server process (and restarts) share the same one.
+  db.exec("CREATE TABLE IF NOT EXISTS auth_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+  const storedCode = () => db.prepare("SELECT value FROM auth_settings WHERE key = 'setup_code'").get()?.value || null;
   if (!userCount()) {
-    setupCode = crypto.randomBytes(5).toString("hex").toUpperCase();
-    console.error(`no users yet: open /login and use setup code ${setupCode} to create the first admin`);
+    db.prepare("INSERT OR IGNORE INTO auth_settings (key, value) VALUES ('setup_code', ?)").run(crypto.randomBytes(5).toString("hex").toUpperCase());
+    console.error(`no users yet: open /login and use setup code ${storedCode()} to create the first admin`);
   }
 
   const failures = new Map(); // ip -> { count, until }
@@ -133,6 +135,7 @@ export function createAuth(db, { readBody, sendJson }) {
     }
 
     if (req.method === "POST" && pathname === "/api/auth/setup") {
+      const setupCode = storedCode();
       if (userCount() || !setupCode) return sendJson(res, 409, { error: "Setup is already done. Sign in instead." }), true;
       if (limited(req)) return sendJson(res, 429, { error: "Too many attempts. Try again in 15 minutes." }), true;
       const body = await readJson(req);
@@ -143,7 +146,7 @@ export function createAuth(db, { readBody, sendJson }) {
       const error = checkNew(body);
       if (error) return sendJson(res, 400, { error }), true;
       const user = insertUser({ ...body, role: "admin" });
-      setupCode = null;
+      db.prepare("DELETE FROM auth_settings WHERE key = 'setup_code'").run();
       startSession(req, res, user);
       return sendJson(res, 200, { user: publicUser(user) }), true;
     }
