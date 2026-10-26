@@ -66,3 +66,8 @@ tr.link{cursor:pointer}tr.link:hover td{background:#f6faf3}
 .message pre{margin:0;padding:12px 14px;font:13px/1.55 Hanken,Arial,sans-serif;white-space:pre-wrap;word-break:break-word}
 button:disabled{opacity:.55;cursor:default}
 @media print{.message{display:none}}
+body.embed{background:transparent}
+body.embed .bar{position:static;background:transparent;padding:0 0 10px;justify-content:flex-end}
+body.embed .bar>:not(form),body.embed .filters label,body.embed .presets,body.embed .filters button[type=submit]{display:none}
+body.embed #pdf{background:var(--forest);border-color:var(--forest);color:#fff}
+body.embed main{padding:0;max-width:none}

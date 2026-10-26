@@ -258,6 +258,7 @@ function render() {
 }
 
 function syncURL() {
+  if (document.body.classList.contains("embed")) return;
   history.replaceState(null, "", `?from=${$("from").value}&to=${$("to").value}&account=${encodeURIComponent($("account").value || "")}`);
 }
 function fillAccounts(wanted) {
@@ -335,6 +336,8 @@ $("report").addEventListener("click", async (e) => {
   const row = e.target.closest("tr[data-target]");
   if (row) document.getElementById(row.dataset.target)?.scrollIntoView({ behavior: "smooth" });
 });
+
+if (new URLSearchParams(location.search).get("embed")) document.body.classList.add("embed");
 
 (async () => {
   try {
