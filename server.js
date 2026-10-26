@@ -1,6 +1,7 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
@@ -15,8 +16,30 @@ try {
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, "public");
-const dataDir = path.join(here, "data");
+// Hostinger publishes every deploy into a fresh hbuilds/versions/<build>/ folder, so data kept
+// next to the code is lost on each deploy. There, keep it in the home folder instead.
+const deployed = here.split(path.sep).includes("hbuilds");
+const dataDir = process.env.DATA_DIR || (deployed ? path.join(os.homedir(), "ad-reports-data") : path.join(here, "data"));
 const pdfDir = path.join(dataDir, "pdfs");
+if (deployed && !process.env.DATA_DIR) recoverFromOldBuilds();
+
+// One-time move: copy the newest data/ left behind in an earlier build folder.
+function recoverFromOldBuilds() {
+  try {
+    if (fs.existsSync(path.join(dataDir, "workspace.db"))) return;
+    const versions = path.resolve(here, "..", "..");
+    const candidates = fs.readdirSync(versions)
+      .map((name) => path.join(versions, name, "nodejs", "data"))
+      .filter((dir) => dir !== path.join(here, "data") && fs.existsSync(path.join(dir, "workspace.db")))
+      .sort((a, b) => fs.statSync(path.join(b, "workspace.db")).mtimeMs - fs.statSync(path.join(a, "workspace.db")).mtimeMs);
+    if (!candidates.length) return;
+    fs.mkdirSync(dataDir, { recursive: true });
+    fs.cpSync(candidates[0], dataDir, { recursive: true });
+    console.error("data recovered from", candidates[0]);
+  } catch (error) {
+    console.error("data recovery skipped", error instanceof Error ? error.message : error);
+  }
+}
 const port = Number(process.env.PORT) || 3000;
 const host = "0.0.0.0";
 
