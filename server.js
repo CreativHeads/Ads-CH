@@ -178,13 +178,66 @@ async function syncLive() {
     }
     const rows = Array.isArray(payload) ? payload : payload.data || [];
     const model = buildLive(rows, endDate);
+    const previous = fs.existsSync(cachePath) ? JSON.parse(fs.readFileSync(cachePath, "utf8")) : null;
+    for (const account of model.accounts) account.ads = previous?.accounts?.find((a) => a.id === account.id)?.ads || [];
     fs.mkdirSync(dataDir, { recursive: true });
     fs.writeFileSync(cachePath, JSON.stringify(model));
     console.error("live sync", model.accounts.length, "accounts", rows.length, "rows", "through", endDate);
+    syncAds(model, cachePath, startDate, endDate);
     return model;
   } catch (error) {
     console.error("live sync failed", String(error.message || error).replace(/api_key=[^&\s]+/gi, "api_key=redacted"));
     return null;
+  }
+}
+
+// Ad-level daily rows (campaign / ad set / ad) for the client drill-down screens.
+// Windsor is slow for this query, so it runs after the account totals are saved.
+async function syncAds(model, cachePath, startDate, endDate) {
+  try {
+    const url = new URL("https://connectors.windsor.ai/facebook");
+    url.searchParams.set("api_key", process.env.WINDSOR_API_KEY);
+    url.searchParams.set("fields", "date,account_id,campaign_id,campaign,adset_id,adset_name,ad_id,ad_name,thumbnail_url,spend,impressions,link_clicks,actions_lead,actions_onsite_conversion_messaging_conversation_started_7d");
+    url.searchParams.set("date_from", startDate);
+    url.searchParams.set("date_to", endDate);
+    const response = await fetch(url, { signal: AbortSignal.timeout(240000) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("ad sync failed", response.status);
+      return;
+    }
+    const rows = Array.isArray(payload) ? payload : payload.data || [];
+    const byAccount = new Map();
+    for (const row of rows) {
+      const date = String(row.date || "").slice(0, 10);
+      const adId = String(row.ad_id || "");
+      if (!adId || !isoDate.test(date)) continue;
+      const accountId = `fb${row.account_id}`;
+      if (!byAccount.has(accountId)) byAccount.set(accountId, new Map());
+      const ads = byAccount.get(accountId);
+      if (!ads.has(adId)) ads.set(adId, { id: adId, name: "", campaignId: "", campaign: "", adsetId: "", adset: "", thumb: null, days: {} });
+      const ad = ads.get(adId);
+      ad.name = String(row.ad_name || ad.name).trim();
+      ad.campaignId = String(row.campaign_id || ad.campaignId);
+      ad.campaign = String(row.campaign || ad.campaign);
+      ad.adsetId = String(row.adset_id || ad.adsetId);
+      ad.adset = String(row.adset_name || ad.adset);
+      if (/^https:\/\//.test(row.thumbnail_url || "")) ad.thumb = row.thumbnail_url;
+      ad.days[date] = {
+        spend: Number(row.spend) || 0,
+        leads: Math.round(Number(row.actions_lead) || 0),
+        clicks: Math.round(Number(row.link_clicks) || 0),
+        impressions: Math.round(Number(row.impressions) || 0),
+        conv: Math.round(Number(row.actions_onsite_conversion_messaging_conversation_started_7d) || 0),
+      };
+    }
+    for (const account of model.accounts) {
+      account.ads = [...(byAccount.get(account.id)?.values() || [])].filter((ad) => Object.values(ad.days).some((d) => d.spend > 0 || d.impressions > 0));
+    }
+    fs.writeFileSync(cachePath, JSON.stringify(model));
+    console.error("ad sync", rows.length, "rows", model.accounts.reduce((n, a) => n + a.ads.length, 0), "ads");
+  } catch (error) {
+    console.error("ad sync failed", String(error.message || error).replace(/api_key=[^&\s]+/gi, "api_key=redacted"));
   }
 }
 
@@ -414,6 +467,7 @@ const server = http.createServer((req, res) => {
 server.listen(port, host, () => {
   console.log(`CreativHeads Ad Reports listening on ${port}`);
   syncLive();
+  setInterval(syncLive, 3 * 60 * 60 * 1000).unref();
   // Windsor's ad-level query is slow (~45s), so keep the default "last 7 days" range warm.
   const warm = () => fetchCreatives(kolkataDate(-7), kolkataDate(-1), true).catch((error) => console.error("creatives warm failed", error.message));
   warm();
