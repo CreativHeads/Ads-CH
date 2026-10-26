@@ -1,0 +1,27 @@
+# Ad Reports at ads.creativheads.com.
+# HTTPS comes from the casting-manager Caddy (ports 80/443), which reaches this
+# container over the casting-manager_default network by the name "ad-reports".
+# Run from /opt/ad-reports/deploy/vps:  docker compose up -d --build
+name: ad-reports
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: deploy/vps/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - data:/data
+    networks:
+      default:
+      web:
+        aliases: [ad-reports]
+
+networks:
+  web:
+    name: casting-manager_default
+    external: true
+
+volumes:
+  data:
