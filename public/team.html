@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#153e35" />
+  <meta name="theme-color" content="#0f2444" />
   <meta name="robots" content="noindex" />
   <title>Team &amp; logins · CreativHeads</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23153e35'/%3E%3Cpath d='M18 45V30h7v15m7 0V20h7v25m7 0V12h7v33' fill='%23d9ecc3'/%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230a63e0'/%3E%3Cpath d='M18 45V30h7v15m7 0V20h7v25m7 0V12h7v33' fill='%23ffffff'/%3E%3C/svg%3E" />
   <style>
     @font-face{font-family:Hanken;src:url('/assets/hanken-regular.ttf') format('truetype');font-weight:400;font-display:swap}
     @font-face{font-family:Hanken;src:url('/assets/hanken-semibold.ttf') format('truetype');font-weight:600 900;font-display:swap}
-    :root{--ink:#202c29;--muted:#6f7872;--forest:#153e35;--lime:#ddedcb;--line:#e3e7e1;--canvas:#f7f8f5;--red:#b25242;--amber:#9a702e}
+    :root{--ink:#101828;--muted:#667085;--forest:#0b1f44;--lime:#e8f1ff;--line:#e4e8ef;--canvas:#f6f8fb;--red:#b25242;--amber:#9a702e}
     *{box-sizing:border-box}
     body{margin:0;background:var(--canvas);color:var(--ink);font:14px/1.45 Hanken,Arial,sans-serif}
     .bar{background:var(--forest);color:#fff;padding:12px 24px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
     .bar h1{margin:0;font-size:18px;font-weight:600}
     .bar a{color:var(--lime);text-decoration:none;font-size:13px}
-    .bar .who{margin-left:auto;font-size:13px;color:#cfe0d6}
+    .bar .who{margin-left:auto;font-size:13px;color:#ccd5e3}
     .bar button{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
     main{max-width:1000px;margin:0 auto;padding:24px 16px 60px}
     section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px}
@@ -24,8 +24,8 @@
     p.sub{margin:0 0 14px;color:var(--muted);font-size:13px}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 14px;align-items:end}
     label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600}
-    input,select{font:inherit;font-weight:400;padding:8px 10px;border:1px solid #cfd6cf;border-radius:9px;background:#fff;min-height:38px}
-    button{font:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid var(--forest);background:var(--forest);color:#fff;padding:8px 14px;min-height:38px}
+    input,select{font:inherit;font-weight:400;padding:8px 10px;border:1px solid #ced2d7;border-radius:9px;background:#fff;min-height:38px}
+    button{font:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid #0a63e0;background:#0a63e0;color:#fff;padding:8px 14px;min-height:38px}
     button.ghost{background:#fff;color:var(--forest)}
     button.danger{background:#fff;color:var(--red);border-color:#e3bdb5}
     button:disabled{opacity:.55;cursor:default}
@@ -34,14 +34,14 @@
     th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line)}
     td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
     td small{display:block;color:var(--muted);font-size:12px}
-    .badge{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;background:#eef3ea;color:var(--forest)}
+    .badge{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;background:#e8edf5;color:var(--forest)}
     .badge.off{background:#f6ece9;color:var(--red)}
     .actions{display:flex;gap:6px;flex-wrap:wrap}
     .msg{display:none;margin-top:12px;padding:9px 12px;border-radius:9px;font-size:13px}
-    .msg.ok{display:block;background:#eef6e8;color:#2c5b28}
+    .msg.ok{display:block;background:#e6edf8;color:#1f3b64}
     .msg.err{display:block;background:#fbefec;color:var(--red)}
     .roles{margin:0;padding-left:18px;color:var(--muted);font-size:13px}
-    .access{background:#fff;color:var(--forest);border:1px solid #cfd6cf;font-weight:600;text-align:left;width:100%;max-width:220px}
+    .access{background:#fff;color:var(--forest);border:1px solid #ced2d7;font-weight:600;text-align:left;width:100%;max-width:220px}
     dialog{border:0;border-radius:16px;padding:0;width:min(440px,calc(100vw - 24px));box-shadow:0 20px 60px rgba(0,0,0,.25)}
     dialog::backdrop{background:rgba(21,40,33,.45)}
     .dlg{padding:20px}
@@ -51,7 +51,7 @@
     .dlg .opt input{margin-top:3px;min-height:0}
     .dlg .list{max-height:min(320px,45vh);overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px}
     .dlg .list label{flex-direction:row;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;font-weight:400;font-size:13.5px}
-    .dlg .list label:hover{background:#f4f7f1}
+    .dlg .list label:hover{background:#f0f3f8}
     .dlg .list input{min-height:0}
     .dlg .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
     .dlg input[type=search]{width:100%;margin-bottom:8px}

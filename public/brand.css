@@ -1,0 +1,71 @@
+/* CreativHeads brand layer: loaded after styles.css and v3.css.
+   Brand blue from the logo, navy for depth, cool neutrals, softer cards and larger, easier text. */
+:root{
+  --brand:#0c75fd;          /* logo blue: highlights, focus, charts */
+  --brand-strong:#0a63e0;   /* buttons and links (readable with white text) */
+  --brand-deep:#0952c0;     /* hover / pressed */
+  --navy:#0b1f44;           /* dark panels */
+  --tint:#e8f1ff;           /* selected / soft fills */
+  --tint-2:#f3f7fe;
+  --ink:#101828;--muted:#667085;--line:#e4e8ef;--canvas:#f6f8fb;--paper:#fff;
+  --green:var(--brand-strong);--forest:var(--brand-strong);--lime:var(--tint);
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06);
+}
+body{background:var(--canvas);color:var(--ink)}
+::selection{background:#cfe1ff}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* sidebar */
+.sidebar{background:#fff;border-right:1px solid var(--line)}
+.brand{padding:0 8px}
+.brand-logo{display:block;height:30px;width:auto}
+.nav-label{font-size:10.5px;color:#98a2b3;letter-spacing:.09em}
+.nav-item{font-size:13.5px;color:#475467;border-radius:10px;padding:10px 12px;position:relative}
+.nav-item:hover{background:var(--tint-2);color:var(--ink)}
+.nav-item.active{background:var(--tint);color:#0a4fb8;font-weight:600}
+.nav-item.active::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:3px;background:var(--brand)}
+.nav-item .icon{opacity:.9}
+.count{font-size:11px;border-radius:99px;padding:1px 7px;background:#eef2f7;color:#475467}
+.count.attention{background:#fdecea;color:#b42318}
+.sync-box{border-color:var(--line);border-radius:12px;font-size:11.5px;background:var(--tint-2)}
+.profile{border-top-color:var(--line)}
+
+/* top bar and page */
+.topbar{background:rgba(255,255,255,.9);backdrop-filter:saturate(1.2) blur(8px);border-bottom-color:var(--line)}
+h1{letter-spacing:-.02em}
+.page-heading p,.subtext{color:var(--muted)}
+
+/* buttons */
+.btn{border-radius:10px;font-size:12.5px;border-color:#d0d5dd;box-shadow:var(--shadow-sm)}
+.btn:hover{background:#f9fafb}
+.btn.primary{background:var(--brand-strong);border-color:var(--brand-strong);color:#fff}
+.btn.primary:hover{background:var(--brand-deep);border-color:var(--brand-deep)}
+.btn.light{background:var(--tint);border-color:var(--tint);color:#0a4fb8}
+.text-link{color:var(--brand-strong)}
+
+/* cards, metrics, tables */
+.card,.metric{border-radius:14px;border-color:var(--line);box-shadow:var(--shadow)}
+.metric-value{letter-spacing:-.02em}
+.badge{font-size:10.5px;border-radius:99px;padding:3px 8px}
+table th{color:#667085}
+tr.clickable:hover td{background:var(--tint-2)}
+.tabs a.active{color:var(--brand-strong);border-color:var(--brand-strong)}
+
+/* AI spotlight panel */
+.ai-spotlight{background:linear-gradient(150deg,var(--navy) 0%,#0f3a86 62%,#0c63e0 120%);color:#f5f8ff}
+
+/* sparklines and small charts drawn in the app */
+.sparkline path{stroke:var(--brand)}
+
+/* phones: keep wide rows (tabs, tables) scrolling inside their box, never the whole page */
+.main-shell,.content{min-width:0;max-width:100%}
+.tabs{max-width:100%;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+@media (max-width:700px){
+  .page-heading{flex-wrap:wrap}
+  .client-hero h1{word-break:normal}
+  .nav-item{font-size:14px}
+}
+/* grid columns may shrink below their widest table; the table scrolls inside its card instead */
+.content-two>*,.stack,.stack>*{min-width:0}
