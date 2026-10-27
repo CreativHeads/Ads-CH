@@ -10,60 +10,137 @@
   <style>
     @font-face{font-family:Hanken;src:url('/assets/hanken-regular.ttf') format('truetype');font-weight:400;font-display:swap}
     @font-face{font-family:Hanken;src:url('/assets/hanken-semibold.ttf') format('truetype');font-weight:600 900;font-display:swap}
-    :root{--ink:#101828;--muted:#667085;--forest:#0b1f44;--lime:#e8f1ff;--line:#e4e8ef;--canvas:#f6f8fb;--red:#b25242;--amber:#9a702e}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--canvas);color:var(--ink);font:14px/1.45 Hanken,Arial,sans-serif}
-    .bar{background:var(--forest);color:#fff;padding:12px 24px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
-    .bar h1{margin:0;font-size:18px;font-weight:600}
-    .bar a{color:var(--lime);text-decoration:none;font-size:13px}
-    .bar .who{margin-left:auto;font-size:13px;color:#ccd5e3}
-    .bar button{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
-    main{max-width:1000px;margin:0 auto;padding:24px 16px 60px}
-    section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px}
-    h2{margin:0 0 4px;font-size:17px;color:var(--forest)}
-    p.sub{margin:0 0 14px;color:var(--muted);font-size:13px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 14px;align-items:end}
-    label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600}
-    input,select{font:inherit;font-weight:400;padding:8px 10px;border:1px solid #ced2d7;border-radius:9px;background:#fff;min-height:38px}
-    button{font:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid #0a63e0;background:#0a63e0;color:#fff;padding:8px 14px;min-height:38px}
-    button.ghost{background:#fff;color:var(--forest)}
+    :root{--ink:#101828;--muted:#667085;--forest:#0b1f44;--lime:#e8f1ff;--line:#e4e8ef;--canvas:#f6f8fb;--red:#b25242;--amber:#9a702e;--blue:#0a63e0;--blue-soft:#e8f1ff;--green:#16794a;--green-soft:#e6f4ed}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{margin:0;background:var(--canvas);color:var(--ink);font:14px/1.5 Hanken,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+
+    /* ── Header bar ─────────────────────────── */
+    .bar{background:linear-gradient(135deg,#0b1f44 0%,#142e5c 100%);color:#fff;padding:14px 28px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;box-shadow:0 2px 12px rgba(11,31,68,.18)}
+    .bar h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-.2px}
+    .bar a{color:var(--lime);text-decoration:none;font-size:13px;transition:opacity .2s}
+    .bar a:hover{opacity:.8}
+    .bar .who{margin-left:auto;font-size:13px;color:#b3c0d6}
+    .bar button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#fff;backdrop-filter:blur(4px);transition:background .2s}
+    .bar button:hover{background:rgba(255,255,255,.16)}
+
+    /* ── Main layout ────────────────────────── */
+    main{max-width:1060px;margin:0 auto;padding:28px 20px 60px}
+    section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:box-shadow .2s}
+    section:hover{box-shadow:0 2px 12px rgba(0,0,0,.07)}
+    h2{margin:0 0 4px;font-size:17px;color:var(--forest);font-weight:700;letter-spacing:-.15px}
+    p.sub{margin:0 0 16px;color:var(--muted);font-size:13px}
+
+    /* ── Form grid ──────────────────────────── */
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px 16px;align-items:end}
+    label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--forest)}
+    input,select{font:inherit;font-weight:400;padding:9px 12px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;min-height:40px;transition:border-color .2s,box-shadow .2s;color:var(--ink)}
+    input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(10,99,224,.12)}
+
+    /* ── Buttons ─────────────────────────────── */
+    button{font:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:10px;border:1px solid var(--blue);background:var(--blue);color:#fff;padding:8px 16px;min-height:40px;transition:all .2s ease;position:relative;overflow:hidden}
+    button:hover{background:#0852b8;border-color:#0852b8;transform:translateY(-1px);box-shadow:0 2px 8px rgba(10,99,224,.25)}
+    button:active{transform:translateY(0);box-shadow:none}
+    button.ghost{background:#fff;color:var(--forest);border-color:#d0d5dd}
+    button.ghost:hover{background:#f5f7fa;border-color:#b0b8c4;box-shadow:0 2px 6px rgba(0,0,0,.06)}
     button.danger{background:#fff;color:var(--red);border-color:#e3bdb5}
-    button:disabled{opacity:.55;cursor:default}
-    .scroll{overflow-x:auto}
-    table{width:100%;border-collapse:collapse;min-width:760px}
-    th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line)}
-    td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
-    td small{display:block;color:var(--muted);font-size:12px}
-    .badge{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;background:#e8edf5;color:var(--forest)}
+    button.danger:hover{background:#fef3f0;border-color:var(--red);box-shadow:0 2px 6px rgba(178,82,66,.12)}
+    button:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
+
+    /* ── Table ────────────────────────────────── */
+    .scroll{overflow-x:auto;border-radius:12px}
+    table{width:100%;border-collapse:collapse;min-width:780px;table-layout:fixed}
+    colgroup .col-name{width:16%}
+    colgroup .col-role{width:17%}
+    colgroup .col-access{width:18%}
+    colgroup .col-status{width:9%}
+    colgroup .col-login{width:17%}
+    colgroup .col-actions{width:23%}
+    th{text-align:left;font-size:11.5px;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:2px solid var(--line);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+    td{padding:14px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+    td small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+    tr{transition:background .15s}
+    tbody tr:hover{background:#f8fafd}
+    tbody tr:last-child td{border-bottom:none}
+
+    /* ── Status badge ────────────────────────── */
+    .badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:4px 10px;border-radius:99px;font-weight:600;letter-spacing:.2px}
+    .badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+    .badge:not(.off){background:var(--green-soft);color:var(--green)}
+    .badge:not(.off)::before{background:var(--green)}
     .badge.off{background:#f6ece9;color:var(--red)}
+    .badge.off::before{background:var(--red)}
+
+    /* ── Action buttons area ─────────────────── */
     .actions{display:flex;gap:6px;flex-wrap:wrap}
-    .msg{display:none;margin-top:12px;padding:9px 12px;border-radius:9px;font-size:13px}
-    .msg.ok{display:block;background:#e6edf8;color:#1f3b64}
-    .msg.err{display:block;background:#fbefec;color:var(--red)}
-    .roles{margin:0;padding-left:18px;color:var(--muted);font-size:13px}
-    .access{background:#fff;color:var(--forest);border:1px solid #ced2d7;font-weight:600;text-align:left;width:100%;max-width:220px}
-    dialog{border:0;border-radius:16px;padding:0;width:min(440px,calc(100vw - 24px));box-shadow:0 20px 60px rgba(0,0,0,.25)}
-    dialog::backdrop{background:rgba(21,40,33,.45)}
-    .dlg{padding:20px}
-    .dlg h3{margin:0 0 4px;color:var(--forest);font-size:17px}
+    .actions button{padding:6px 12px;min-height:34px;font-size:12.5px}
+
+    /* ── Messages ─────────────────────────────── */
+    .msg{display:none;margin-top:14px;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:500;animation:slideMsg .3s ease}
+    .msg.ok{display:block;background:var(--blue-soft);color:#1f3b64;border:1px solid #c8d8f0}
+    .msg.err{display:block;background:#fbefec;color:var(--red);border:1px solid #f0d4ce}
+    @keyframes slideMsg{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ── Misc ──────────────────────────────────── */
+    .roles{margin:0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.7}
+    .access{background:#fff;color:var(--forest);border:1px solid #d0d5dd;font-weight:600;text-align:left;width:100%;max-width:220px}
+
+    /* ── Dialog ────────────────────────────────── */
+    dialog{border:0;border-radius:18px;padding:0;width:min(440px,calc(100vw - 24px));box-shadow:0 24px 64px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.05);animation:dlgIn .25s ease}
+    @keyframes dlgIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    dialog::backdrop{background:rgba(11,20,40,.5);backdrop-filter:blur(3px)}
+    .dlg{padding:24px}
+    .dlg h3{margin:0 0 4px;color:var(--forest);font-size:17px;font-weight:700}
     .dlg .opts{display:grid;gap:8px;margin:14px 0}
-    .dlg .opt{flex-direction:row;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-weight:400}
+    .dlg .opt{flex-direction:row;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;font-weight:400;transition:border-color .2s,background .2s}
+    .dlg .opt:hover{border-color:#a8b3c5;background:#f8fafd}
     .dlg .opt input{margin-top:3px;min-height:0}
-    .dlg .list{max-height:min(320px,45vh);overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px}
-    .dlg .list label{flex-direction:row;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;font-weight:400;font-size:13.5px}
+    .dlg .list{max-height:min(320px,45vh);overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px}
+    .dlg .list label{flex-direction:row;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-weight:400;font-size:13.5px;transition:background .15s}
     .dlg .list label:hover{background:#f0f3f8}
     .dlg .list input{min-height:0}
-    .dlg .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+    .dlg .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
     .dlg input[type=search]{width:100%;margin-bottom:8px}
     [hidden]{display:none!important}
-    @media (max-width:600px){
-      .bar{padding:12px 16px}.bar .who{margin-left:0;width:100%}
-      main{padding:16px 12px 48px}section{padding:16px 14px}
-      /* team members: one card per person */
-      table{min-width:0}thead{display:none}
-      tr{display:grid;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
-      td{border:0;padding:0}td select{width:100%}
-      .actions button{flex:1}
+
+    /* ── Mobile label (hidden on desktop) ──── */
+    td .mobile-label{display:none}
+
+    /* ── Responsive: Mobile ────────────────── */
+    @media (max-width:700px){
+      .bar{padding:14px 16px}
+      .bar .who{margin-left:0;width:100%;padding-top:4px;border-top:1px solid rgba(255,255,255,.1)}
+      main{padding:16px 12px 48px}
+      section{padding:18px 16px;border-radius:14px}
+      .grid{grid-template-columns:1fr}
+
+      /* Card layout for team table */
+      .scroll{overflow-x:visible}
+      table{min-width:0}
+      thead{display:none}
+      colgroup{display:none}
+      tbody{display:flex;flex-direction:column;gap:12px}
+      tr{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+      tbody tr:hover{background:#fff}
+      td{border:0;padding:0}
+
+      /* Mobile labels */
+      td .mobile-label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+
+      /* Name spans full row */
+      td:nth-child(1){grid-column:1 / -1;padding-bottom:4px;border-bottom:1px solid var(--line)}
+      td:nth-child(1) strong{font-size:15px}
+      /* Role & Client access side by side */
+      td:nth-child(2) select{width:100%;min-height:38px}
+      /* Status & Last sign-in side by side */
+      /* Actions full width */
+      td:nth-child(6){grid-column:1 / -1;padding-top:6px;border-top:1px solid var(--line)}
+      .actions{gap:8px}
+      .actions button{flex:1;min-height:38px;font-size:12.5px}
+    }
+
+    @media (max-width:420px){
+      tr{grid-template-columns:1fr}
+      td:nth-child(2),td:nth-child(3),td:nth-child(4),td:nth-child(5){grid-column:1 / -1}
     }
   </style>
 </head>
@@ -116,6 +193,7 @@
       <h2>Team members</h2>
       <p class="sub" id="count"></p>
       <div class="scroll"><table>
+        <colgroup><col class="col-name"/><col class="col-role"/><col class="col-access"/><col class="col-status"/><col class="col-login"/><col class="col-actions"/></colgroup>
         <thead><tr><th>Name</th><th>Role</th><th>Client access</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead>
         <tbody id="users"></tbody>
       </table></div>
@@ -193,10 +271,10 @@
           var rows = j.users.map(function (u) {
             var self = u.id === me.id;
             return "<tr data-id='" + u.id + "'><td><strong>" + esc(u.name) + (self ? " (you)" : "") + "</strong><small>" + esc(u.username) + "</small></td>" +
-              "<td><select data-act='role'" + (self ? " disabled" : "") + ">" + Object.keys(ROLE).map(function (r) { return "<option value='" + r + "'" + (u.role === r ? " selected" : "") + ">" + ROLE[r] + "</option>"; }).join("") + "</select></td>" +
-              "<td>" + (u.role === "admin" ? "<small>All clients (admin)</small>" : "<button type='button' class='access' data-act='access'>" + esc(accessLabel(u.clients)) + "</button>") + "</td>" +
-              "<td>" + (u.disabled ? "<span class='badge off'>Disabled</span>" : "<span class='badge'>Active</span>") + "</td>" +
-              "<td><small>Last sign-in: " + when(u.last_login_at) + "</small></td>" +
+              "<td><span class='mobile-label'>Role</span><select data-act='role'" + (self ? " disabled" : "") + ">" + Object.keys(ROLE).map(function (r) { return "<option value='" + r + "'" + (u.role === r ? " selected" : "") + ">" + ROLE[r] + "</option>"; }).join("") + "</select></td>" +
+              "<td><span class='mobile-label'>Client access</span>" + (u.role === "admin" ? "<small>All clients (admin)</small>" : "<button type='button' class='access' data-act='access'>" + esc(accessLabel(u.clients)) + "</button>") + "</td>" +
+              "<td><span class='mobile-label'>Status</span>" + (u.disabled ? "<span class='badge off'>Disabled</span>" : "<span class='badge'>Active</span>") + "</td>" +
+              "<td><span class='mobile-label'>Last sign-in</span><small>" + when(u.last_login_at) + "</small></td>" +
               "<td><div class='actions'><button type='button' class='ghost' data-act='reset'>Reset password</button>" +
               (self ? "" : "<button type='button' class='ghost' data-act='toggle'>" + (u.disabled ? "Enable" : "Disable") + "</button><button type='button' class='danger' data-act='delete'>Delete</button>") +
               "</div></td></tr>";
