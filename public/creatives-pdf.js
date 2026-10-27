@@ -179,16 +179,29 @@ export async function buildReportPdf(model) {
   };
   const metricCells = (t) => [num(t.ads), money(t.spend), num(t.impressions), num(t.clicks), t.ctr.toFixed(2) + "%", num(t.conv), money(t.cpc), num(t.leads)];
 
-  function image(url, x, yy, w, h) {
+  // Photos fill a rounded frame: clip to a rounded rectangle, then cover-fit the image inside it.
+  function clipRounded(x, yy, w, h, r) {
+    const { pushGraphicsState, moveTo, lineTo, appendBezierCurve, closePath, clip, endPath } = PDFLib;
+    const k = 0.5523 * r; // bezier handle length for a quarter circle
+    page.pushOperators(
+      pushGraphicsState(),
+      moveTo(x + r, yy), lineTo(x + w - r, yy), appendBezierCurve(x + w - r + k, yy, x + w, yy + r - k, x + w, yy + r),
+      lineTo(x + w, yy + h - r), appendBezierCurve(x + w, yy + h - r + k, x + w - r + k, yy + h, x + w - r, yy + h),
+      lineTo(x + r, yy + h), appendBezierCurve(x + r - k, yy + h, x, yy + h - r + k, x, yy + h - r),
+      lineTo(x, yy + r), appendBezierCurve(x, yy + r - k, x + r - k, yy, x + r, yy),
+      closePath(), clip(), endPath(),
+    );
+  }
+  function image(url, x, yy, w, h, r = 8) {
     const img = images.get(url);
-    if (!img) {
-      page.drawRectangle({ x, y: yy, width: w, height: h, color: C.photo });
-      center("No preview", x + w / 2, yy + h / 2 - 3, 7, font, C.muted);
-      return;
-    }
-    const k = Math.min(w / img.width, h / img.height); // fit inside the frame, centred
+    clipRounded(x, yy, w, h, Math.min(r, w / 2, h / 2));
     page.drawRectangle({ x, y: yy, width: w, height: h, color: C.photo });
-    page.drawImage(img, { x: x + (w - img.width * k) / 2, y: yy + (h - img.height * k) / 2, width: img.width * k, height: img.height * k });
+    if (img) {
+      const k = Math.max(w / img.width, h / img.height);
+      page.drawImage(img, { x: x + (w - img.width * k) / 2, y: yy + (h - img.height * k) / 2, width: img.width * k, height: img.height * k });
+    }
+    page.pushOperators(PDFLib.popGraphicsState());
+    if (!img) center("No preview", x + w / 2, yy + h / 2 - 3, 7, font, C.muted);
   }
 
   // ---- page 1 ----
@@ -225,8 +238,8 @@ export async function buildReportPdf(model) {
   for (const s of model.sections) {
     const rowH = 50;
     ensure(rowH + 4);
-    image(s.thumbs[0], M, y - rowH + 4, 40, rowH - 8);
-    image(s.thumbs[1] || s.thumbs[0], M + 43, y - rowH + 4, 40, rowH - 8);
+    image(s.thumbs[0], M, y - rowH + 4, 40, rowH - 8, 6);
+    image(s.thumbs[1] || s.thumbs[0], M + 43, y - rowH + 4, 40, rowH - 8, 6);
     const tx = M + 92, tw = CW - 92 - 150;
     const lines = wrap(s.name + ": " + s.adNames.join(", "), tw, 8.5, font, 3);
     lines.forEach((l, i) => {
