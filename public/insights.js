@@ -6,6 +6,23 @@ if (embed) document.body.classList.add("embed");
 
 let me = null, live = null, data = null;
 
+const svg = (d, cls = "ico") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICON = {
+  spark: svg('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 17l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>'),
+  alert: svg('<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6A2 2 0 0 0 22 18L13.7 3.9a2 2 0 0 0-3.4 0z"/>'),
+  eye: svg('<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+  check: svg('<path d="M20 6L9 17l-5-5"/>'),
+  info: svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'),
+  list: svg('<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>'),
+  chart: svg('<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  users: svg('<path d="M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1"/><circle cx="9" cy="8" r="4"/><path d="M22 20v-1a4 4 0 0 0-3-3.9M16 4.1a4 4 0 0 1 0 7.8"/>'),
+  target: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>'),
+  grid: svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+};
+const TONE = { high: ["Fix now", ICON.alert], medium: ["Worth a look", ICON.eye], good: ["Good news", ICON.check], info: ["FYI", ICON.info] };
+const SECTION_ICON = { good: ICON.check, warn: ICON.eye, bad: ICON.alert, info: ICON.info };
+
 const num = (v) => Math.round(v).toLocaleString("en-IN");
 function money(v) {
   if (v == null) return "—";
@@ -28,7 +45,14 @@ function period(from, to) {
   return from === to ? t.toLocaleDateString("en-GB", { ...o, year: "numeric" }) : `${f.toLocaleDateString("en-GB", o)} – ${t.toLocaleDateString("en-GB", { ...o, year: "numeric" })}`;
 }
 
-// Small, safe markdown: paragraphs, **bold**, and - / 1. lists.
+// ---- AI summary: new saves are JSON (headline, sections, actions); older ones are markdown text ----
+function parseSummary(text) {
+  try {
+    const j = JSON.parse(text);
+    if (j && j.headline && Array.isArray(j.sections)) return j;
+  } catch { /* older plain-text summary */ }
+  return null;
+}
 function markdown(text) {
   const lines = esc(text).split(/\n/);
   let html = "", list = null;
@@ -46,65 +70,104 @@ function markdown(text) {
   close();
   return html;
 }
-
-function table(heads, rows) {
-  return `<div class="scroll"><table><thead><tr>${heads.map((h, i) => `<th class="${i ? "num" : ""}">${h}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td class="${i ? "num" : ""}">${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+function summaryText(s) {
+  const j = parseSummary(s.text);
+  if (!j) return s.text;
+  return [`*${data.account} — ${period(data.from, data.to)}*`, "", j.headline, "",
+    ...j.sections.flatMap((x) => [`*${x.title}*`, ...(x.points || []).map((p) => `• ${p}`), ""]),
+    "*What to change*", ...(j.actions || []).map((a, i) => `${i + 1}. ${a.title}: ${a.detail}`)].join("\n");
 }
-const breakdown = (list) => table(["", "Spend", "Clicks", "Conv.", "Cost / conv."], list.map((x) => [esc(x.key), money(x.spend), num(x.clicks), num(x.conv), money(x.cpc)]));
-
+function aiBody(s) {
+  const j = parseSummary(s.text);
+  if (!j) return `<div class="text">${markdown(s.text)}</div>`;
+  const verdict = { good: "Going well", mixed: "Mixed", poor: "Needs work" }[j.verdict];
+  return `<div class="headline">${ICON.spark}<p>${esc(j.headline)}</p></div>
+    ${verdict ? `<p style="margin:-6px 0 14px"><span class="pill ${esc(j.verdict)}">Overall: ${verdict}</span></p>` : ""}
+    <div class="sections">${j.sections.map((x) => {
+      const tone = ["good", "warn", "bad", "info"].includes(x.tone) ? x.tone : "info";
+      return `<div class="section ${tone}"><h4>${SECTION_ICON[tone]}${esc(x.title)}</h4>${(x.points || []).map((p) => `<p>${esc(p)}</p>`).join("")}</div>`;
+    }).join("")}</div>
+    ${(j.actions || []).length ? `<p class="actions-title">What to change</p><ol class="actions">${j.actions.map((a) => `<li><div><strong>${esc(a.title)}</strong><span>${esc(a.detail)}</span></div><span class="pill ${["high", "medium", "low"].includes(a.impact) ? a.impact : "low"}">${esc(a.impact || "low")} impact</span></li>`).join("")}</ol>` : ""}`;
+}
 function aiCard() {
   const s = data.summary, canWrite = me && me.role !== "staff";
   const when = s ? new Date(s.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
   let body;
-  if (s) body = `<div class="text">${markdown(s.text)}</div><p class="note">Written ${esc(when)}${s.created_by ? " for " + esc(s.created_by) : ""} from the numbers below. Check before sharing.</p>`;
-  else if (!data.openai) body = `<div class="notice">The AI summary needs OpenAI to be connected. An admin adds the key once on the server (deploy/vps/set-openai-key.sh). The findings and suggestions below work without it.</div>`;
-  else body = `<p class="note">No summary for this client and period yet.${canWrite ? " Write one from the numbers below." : ""}</p>`;
-  const button = data.openai && canWrite ? `<button type="button" class="dark" id="write">${s ? "Rewrite summary" : "Write summary"}</button>` : "";
-  const copy = s ? `<button type="button" class="light" id="copy">Copy</button>` : "";
-  return `<section class="card ai"><header><h3>AI summary</h3><small>${data.openai ? esc(data.model) : "OpenAI not connected"}</small><span class="grow">${copy}${button}</span></header>${body}</section>`;
+  if (s) body = aiBody(s) + `<p class="footnote">Written ${esc(when)}${s.created_by ? " for " + esc(s.created_by) : ""} from the numbers on this page. Nothing was changed in Meta. Check before sharing.</p>`;
+  else if (!data.openai) body = `<div class="notice">${ICON.info}<div>The AI summary needs OpenAI to be connected. An admin adds the key once on the server. The findings and suggestions below work without it.</div></div>`;
+  else body = `<div class="empty"><span>No summary for ${esc(data.account)} in this period yet.</span>${canWrite ? `<button type="button" class="btn dark" data-write>${ICON.spark}Write summary</button>` : ""}</div>`;
+  const tools = s ? `<span class="tools"><button type="button" class="btn light" id="copy">Copy text</button>${data.openai && canWrite ? `<button type="button" class="btn dark" data-write>${ICON.spark}Rewrite</button>` : ""}</span>` : "";
+  return `<section class="card ai"><div class="card-head"><h3>${ICON.spark}AI summary</h3><span class="pill model">${data.openai ? esc(data.model) : "OpenAI not connected"}</span>${tools}</div>${body}</section>`;
+}
+
+// ---- breakdown rows: bar = share of conversations; numbers written out ----
+function rows(list, totalConv) {
+  const useful = list.filter((x) => x.spend >= 1);
+  if (!useful.length) return `<p class="footnote">No data for this period.</p>`;
+  const best = useful.filter((x) => x.conv >= Math.max(3, totalConv * 0.15)).sort((a, b) => a.cpc - b.cpc)[0];
+  const max = Math.max(1, ...useful.map((x) => x.conv));
+  return `<div class="rows">${useful.slice(0, 8).map((x) => `<div class="brow">
+      <div class="name">${esc(x.key)}${best && x.key === best.key ? `<span class="best">best cost</span>` : ""}<small>${money(x.spend)} · ${num(x.clicks)} clicks</small></div>
+      <div class="track" role="img" aria-label="${esc(x.key)}: ${x.conv} conversations"><div class="fill" style="width:${(x.conv / max) * 100}%"></div></div>
+      <div class="val"><b>${num(x.conv)}</b> conv.<small>${money(x.cpc)} each</small></div></div>`).join("")}</div>
+    <details class="table"><summary>Show as table</summary><div class="scroll"><table><thead><tr><th></th><th class="num">Spend</th><th class="num">Clicks</th><th class="num">Conv.</th><th class="num">Cost / conv.</th></tr></thead><tbody>${list.map((x) => `<tr><td>${esc(x.key)}</td><td class="num">${money(x.spend)}</td><td class="num">${num(x.clicks)}</td><td class="num">${num(x.conv)}</td><td class="num">${money(x.cpc)}</td></tr>`).join("")}</tbody></table></div></details>`;
+}
+function hourChart(hours) {
+  const max = Math.max(1, ...hours.map((h) => h.conv));
+  const top = [...hours].sort((x, y) => y.conv - x.conv).slice(0, 4).filter((h) => h.conv).map((h) => h.hour);
+  const label = (h) => (h === 0 ? "12a" : h < 12 ? `${h}a` : h === 12 ? "12p" : `${h - 12}p`);
+  return `<div class="chart"><div class="plot">${hours.map((h) => `<div class="col ${top.includes(h.hour) ? "top" : ""}" tabindex="0" aria-label="${label(h.hour)}: ${h.conv} conversations, ${money(h.spend)} spent">
+      <i style="height:${Math.max(1.5, (h.conv / max) * 100)}%"></i><span class="tip">${label(h.hour)}–${label((h.hour + 1) % 24)} · <b>${h.conv}</b> conv. · ${money(h.cpc)} each</span></div>`).join("")}</div>
+    <div class="axis">${hours.map((h) => `<span>${h.hour % 3 === 0 ? label(h.hour) : ""}</span>`).join("")}</div></div>`;
 }
 
 function render() {
   const a = data.audit, t = a.totals;
   if (!t.spend) {
-    $("out").innerHTML = `<p class="status">No spend for ${esc(data.account)} in ${esc(period(data.from, data.to))}.</p>`;
+    $("out").innerHTML = `<div class="status">No spend for ${esc(data.account)} in ${esc(period(data.from, data.to))}.</div>`;
     return;
   }
-  const tiles = [["Spend", money(t.spend)], ["Reach", num(t.reach)], ["Link clicks", num(t.clicks)], ["CTR", t.ctr.toFixed(2) + "%"], ["WA conversations", num(t.conv)], ["Cost / conv.", money(t.cpc)], ["Leads", num(t.leads)], ["Ads", num(t.ads)]];
-  const maxConv = Math.max(1, ...a.hours.map((h) => h.conv));
-  const topHours = [...a.hours].sort((x, y) => y.conv - x.conv).slice(0, 4).map((h) => h.hour);
-  let html = embed ? `<div class="embed-tools"></div>` : "";
-  html += `<section class="title"><h2>${esc(data.account)} — Insights — ${esc(period(data.from, data.to))}</h2><p>Meta ads audit: what is working, what is wasting money, and what to change. Nothing here changes anything in Meta.</p></section>`;
-  html += `<div class="tiles">${tiles.map(([l, v]) => `<div class="tile"><small>${l}</small><strong>${v}</strong></div>`).join("")}</div>`;
+  const kpis = [["Spend", money(t.spend), true], ["WA conversations", num(t.conv)], ["Cost / conversation", money(t.cpc)], ["Reach", num(t.reach)], ["Link clicks", num(t.clicks)], ["CTR", t.ctr.toFixed(2) + "%"], ["Leads", num(t.leads)], ["Ads running", num(t.ads)]];
+  const order = { high: 0, medium: 1, good: 2, info: 3 };
+  const findings = [...a.findings].sort((x, y) => order[x.severity] - order[y.severity]);
+  let html = `<section class="hero"><div><div class="eyebrow">Meta ads audit</div><h2>${esc(data.account)}</h2><p>What is working, what is wasting money, and what to change. Nothing here changes anything in Meta.</p></div>
+    <div class="chips"><span class="chip">${esc(period(data.from, data.to))}</span><span class="chip"><i class="dot"></i>Live Meta data</span></div></section>`;
+  html += `<div class="kpis">${kpis.map(([l, v, accent]) => `<div class="kpi ${accent ? "accent" : ""}"><small>${l}</small><strong>${v}</strong></div>`).join("")}</div>`;
   html += aiCard();
-  html += `<section class="card"><header><h3>Findings</h3><small>${a.findings.length} from the numbers</small></header><div class="findings">${a.findings.map((f) => `<div class="finding ${f.severity}"><i class="dot"></i><div><strong>${esc(f.title)}</strong><span>${esc(f.detail)}</span></div></div>`).join("")}</div></section>`;
-  html += `<section class="card"><header><h3>Suggested changes</h3><small>for whoever manages the ad account</small></header><ol class="suggest">${a.suggestions.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></section>`;
-  html += `<section class="card"><header><h3>Every ad</h3><small>goal, button and destination decide whether an ad can start WhatsApp chats</small></header>${table(
-    ["Ad", "Spend", "Share", "Reach", "Freq.", "Clicks", "Conv.", "Cost / conv.", "Setup"],
-    a.ads.map((x) => [`<strong>${esc(x.name)}</strong><br><small class="note">${esc(x.campaign)} · ${esc(x.adset)}</small>`, money(x.spend), x.share + "%", num(x.reach), x.frequency.toFixed(1), num(x.clicks), num(x.conv), money(x.cpc),
-      `<span class="tag ${x.messaging ? "" : "warn"}">${x.messaging ? "WhatsApp" : esc(x.destination)}</span><br><small class="note">${esc(x.objective)} · ${esc(x.button)}</small>`]))}</section>`;
-  html += `<div class="grid2"><section class="card"><header><h3>Placement</h3></header>${breakdown(a.placements)}</section>
-    <section class="card"><header><h3>Time of day</h3><small>conversations by hour</small></header>
-      <div class="bars">${a.hours.map((h) => `<div class="${topHours.includes(h.hour) && h.conv ? "top" : ""}" style="height:${Math.max(2, (h.conv / maxConv) * 100)}%" title="${h.hour}:00 · ${h.conv} conversations · ${money(h.cpc)} each"></div>`).join("")}</div>
-      <div class="hours">${a.hours.map((h) => `<span>${h.hour % 3 === 0 ? h.hour : ""}</span>`).join("")}</div>
-      ${breakdown(a.dayparts)}</section></div>`;
-  html += `<div class="grid2"><section class="card"><header><h3>Age</h3></header>${breakdown(a.ages)}</section><section class="card"><header><h3>Gender</h3></header>${breakdown(a.genders)}<p class="note" style="margin-top:10px">Where the ads ran: ${a.regions.map((r) => `${esc(r.key)} ${Math.round((r.spend / t.spend) * 100)}%`).join(", ") || "—"}. Meta does not report conversations by town.</p></section></div>`;
-  html += `<section class="card"><header><h3>Targeting by ad set</h3><small>as set in Ads Manager</small></header>${table(
-    ["Ad set", "Location", "Excluded", "Ages", "Gender", "App language", "Interests"],
-    a.targeting.map((x) => [`<strong>${esc(x.adset)}</strong><br><small class="note">${esc(x.campaign)}</small>`, esc(x.include.join("; ")), esc(x.exclude.join(", ") || "—"), esc(x.age), esc(x.genders), x.locales.length ? `<span class="tag warn">code ${esc(x.locales.join(", "))}</span>` : "All", esc(x.interests.join(", ") || "—")]))}</section>`;
+  html += `<section class="card"><div class="card-head"><h3>${ICON.alert}Findings</h3><small>${findings.length} from the numbers</small></div><div class="findings">${findings.map((f) => {
+    const [lab, ico] = TONE[f.severity] || TONE.info;
+    return `<div class="finding ${f.severity} ${f.detail.length > 260 ? "wide" : ""}"><span class="badge">${ico}</span><div><span class="label">${lab}</span><strong>${esc(f.title)}</strong><span class="detail">${esc(f.detail)}</span></div></div>`;
+  }).join("")}</div></section>`;
+  html += `<section class="card"><div class="card-head"><h3>${ICON.list}Suggested changes</h3><small>for whoever manages the ad account</small></div><ol class="steps">${a.suggestions.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></section>`;
+  html += `<div class="grid2 row-gap"><section class="card"><div class="card-head"><h3>${ICON.grid}Placement</h3><small>conversations and cost per conversation</small></div>${rows(a.placements, t.conv)}</section>
+    <section class="card"><div class="card-head"><h3>${ICON.clock}Time of day</h3><small>conversations by hour · hover a bar</small></div>${hourChart(a.hours)}${rows(a.dayparts, t.conv)}</section></div>`;
+  html += `<div class="grid2 row-gap"><section class="card"><div class="card-head"><h3>${ICON.users}Age</h3></div>${rows(a.ages, t.conv)}</section>
+    <section class="card"><div class="card-head"><h3>${ICON.users}Gender</h3></div>${rows(a.genders, t.conv)}<p class="footnote">Where the ads ran: ${a.regions.filter((r) => r.spend >= t.spend * 0.01).map((r) => `${esc(r.key)} ${Math.round((r.spend / t.spend) * 100)}%`).join(", ") || "—"}. Meta does not report conversations by town.</p></section></div>`;
+  html += `<section class="card"><div class="card-head"><h3>${ICON.chart}Every ad</h3><small>goal, button and destination decide whether an ad can start WhatsApp chats</small></div><div class="ads">${a.ads.map((x) => `<div class="ad">
+      <div class="ad-top"><div><strong>${esc(x.name)}</strong><small>${esc(x.campaign)} · ${esc(x.adset)}</small></div><span class="tag ${x.messaging ? "" : "warn"}">${x.messaging ? "WhatsApp" : esc(x.destination)}</span></div>
+      <div class="share" title="${x.share}% of spend"><i style="width:${x.share}%"></i></div>
+      <div class="mini"><div><small>Spend</small><b>${money(x.spend)}</b></div><div><small>Conv.</small><b>${num(x.conv)}</b></div><div><small>Cost / conv.</small><b>${money(x.cpc)}</b></div><div><small>Frequency</small><b>${x.frequency.toFixed(1)}×</b></div></div>
+      <div class="setup">${x.share}% of spend · ${num(x.reach)} reached · ${num(x.clicks)} clicks · ${esc(x.objective)} goal · button “${esc(x.button)}”</div></div>`).join("")}</div></section>`;
+  html += `<section class="card"><div class="card-head"><h3>${ICON.target}Targeting by ad set</h3><small>as set in Ads Manager</small></div><div class="targets">${a.targeting.map((x) => `<div class="target"><h4>${esc(x.adset)}<small>${esc(x.campaign)}</small></h4><dl>
+      <dt>Location</dt><dd>${esc(x.include.join("; "))}</dd>
+      ${x.exclude.length ? `<dt>Excluded</dt><dd>${esc(x.exclude.join(", "))}</dd>` : ""}
+      <dt>Ages</dt><dd>${esc(x.age)} · ${esc(x.genders)}</dd>
+      <dt>App language</dt><dd>${x.locales.length ? `<span class="tag warn">Limited · code ${esc(x.locales.join(", "))}</span>` : "All languages"}</dd>
+      <dt>Interests</dt><dd>${esc(x.interests.join(", ") || "None (broad)")}</dd></dl></div>`).join("") || `<p class="footnote">No targeting details for this period.</p>`}</div></section>`;
   $("out").innerHTML = html;
 
-  $("write")?.addEventListener("click", writeSummary);
+  document.querySelectorAll("[data-write]").forEach((b) => b.addEventListener("click", writeSummary));
   $("copy")?.addEventListener("click", async (e) => {
-    try { await navigator.clipboard.writeText(data.summary.text); e.target.textContent = "Copied"; } catch { e.target.textContent = "Copy failed"; }
-    setTimeout(() => { e.target.textContent = "Copy"; }, 1500);
+    const b = e.currentTarget;
+    try { await navigator.clipboard.writeText(summaryText(data.summary)); b.textContent = "Copied"; } catch { b.textContent = "Copy failed"; }
+    setTimeout(() => { b.textContent = "Copy text"; }, 1500);
   });
 }
 
 async function writeSummary(e) {
-  const button = e.target;
+  const button = e.currentTarget;
   button.disabled = true;
-  button.textContent = "Writing…";
+  button.textContent = "Writing… about 15 seconds";
   try {
     const r = await fetch("/api/insights/summary", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: data.account, from: data.from, to: data.to }) });
     const j = await r.json();
@@ -121,7 +184,7 @@ async function writeSummary(e) {
 async function load() {
   const params = new URLSearchParams({ account: $("account").value, from: $("from").value, to: $("to").value });
   if (!embed) history.replaceState(null, "", `?${params}`);
-  $("out").innerHTML = `<p class="status">Analysing ${esc($("account").value)}… the first run for a date range takes up to a minute.</p>`;
+  $("out").innerHTML = `<div class="status"><div class="spinner"></div>Analysing ${esc($("account").value)}… the first run for a date range takes up to a minute.</div>`;
   try {
     const r = await fetch(`/api/insights?${params}`);
     if (r.status === 401) { location.href = "/login?next=" + encodeURIComponent(location.pathname + location.search); return; }
@@ -130,7 +193,7 @@ async function load() {
     data = j;
     render();
   } catch (error) {
-    $("out").innerHTML = `<p class="status">Could not load the analysis (${esc(error.message)}). Try again in a minute.</p>`;
+    $("out").innerHTML = `<div class="status">Could not load the analysis (${esc(error.message)}). Try again in a minute.</div>`;
   }
 }
 
@@ -148,6 +211,6 @@ $("account").addEventListener("change", load);
   const wanted = q.get("account") && names.includes(q.get("account")) ? q.get("account") : names.includes("Staxhaus") ? "Staxhaus" : names[0];
   $("account").innerHTML = names.map((n) => `<option ${n === wanted ? "selected" : ""}>${esc(n)}</option>`).join("");
   if (q.get("from") && q.get("to")) { $("from").value = q.get("from"); $("to").value = q.get("to"); } else preset(7);
-  if (!names.length) { $("out").innerHTML = `<p class="status">No live accounts yet.</p>`; return; }
+  if (!names.length) { $("out").innerHTML = `<div class="status">No live accounts yet.</div>`; return; }
   load();
 })();

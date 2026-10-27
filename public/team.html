@@ -42,7 +42,15 @@
     .msg.err{display:block;background:#fbefec;color:var(--red)}
     .roles{margin:0;padding-left:18px;color:var(--muted);font-size:13px}
     [hidden]{display:none!important}
-    @media (max-width:600px){.bar{padding:12px 16px}.bar .who{margin-left:0;width:100%}}
+    @media (max-width:600px){
+      .bar{padding:12px 16px}.bar .who{margin-left:0;width:100%}
+      main{padding:16px 12px 48px}section{padding:16px 14px}
+      /* team members: one card per person */
+      table{min-width:0}thead{display:none}
+      tr{display:grid;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
+      td{border:0;padding:0}td select{width:100%}
+      .actions button{flex:1}
+    }
   </style>
 </head>
 <body>
@@ -120,7 +128,7 @@
             return "<tr data-id='" + u.id + "'><td><strong>" + esc(u.name) + (self ? " (you)" : "") + "</strong><small>" + esc(u.username) + "</small></td>" +
               "<td><select data-act='role'" + (self ? " disabled" : "") + ">" + Object.keys(ROLE).map(function (r) { return "<option value='" + r + "'" + (u.role === r ? " selected" : "") + ">" + ROLE[r] + "</option>"; }).join("") + "</select></td>" +
               "<td>" + (u.disabled ? "<span class='badge off'>Disabled</span>" : "<span class='badge'>Active</span>") + "</td>" +
-              "<td>" + when(u.last_login_at) + "</td>" +
+              "<td><small>Last sign-in: " + when(u.last_login_at) + "</small></td>" +
               "<td><div class='actions'><button type='button' class='ghost' data-act='reset'>Reset password</button>" +
               (self ? "" : "<button type='button' class='ghost' data-act='toggle'>" + (u.disabled ? "Enable" : "Disable") + "</button><button type='button' class='danger' data-act='delete'>Delete</button>") +
               "</div></td></tr>";

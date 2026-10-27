@@ -30,7 +30,7 @@ let current = null; // model for the selected client, used by the PDF button
 function moneyIn(currency, v, decimals) {
   if (v == null) return "—";
   const sym = currency === "AED" ? "AED " : "₹";
-  const d = decimals ?? (v >= 1000 ? 0 : 2);
+  const d = decimals ?? (v >= 100 ? 0 : 2);
   return sym + v.toLocaleString("en-IN", { minimumFractionDigits: d, maximumFractionDigits: d });
 }
 const num = (v) => v.toLocaleString("en-IN");
@@ -139,8 +139,10 @@ const HEADS = ["Ads", "Spend", "Impressions", "Clicks", "CTR", "WA conv.", "Cost
 function table(money, first, rows, total, extraHead = []) {
   const cells = (t) => [num(t.ads), money(t.spend), num(t.impressions), num(t.clicks), t.ctr.toFixed(2) + "%", num(t.conv), money(t.cpc), num(t.leads)];
   const head = `<tr><th>${first}</th>${extraHead.map((h) => `<th>${h}</th>`).join("")}${HEADS.map((h) => `<th>${h}</th>`).join("")}</tr>`;
-  const body = rows.map((r) => `<tr${r.target ? ` class="link" data-target="${r.target}"` : ""}>${[...r.lead, ...cells(r.t)].map((c) => `<td>${c}</td>`).join("")}</tr>`).join("");
-  const foot = total ? `<tr class="total">${[...total.lead, ...cells(total.t)].map((c) => `<td>${c}</td>`).join("")}</tr>` : "";
+  const labels = [first, ...extraHead, ...HEADS];
+  const td = (c, i) => `<td data-label="${labels[i]}">${c}</td>`;
+  const body = rows.map((r) => `<tr${r.target ? ` class="link" data-target="${r.target}"` : ""}>${[...r.lead, ...cells(r.t)].map(td).join("")}</tr>`).join("");
+  const foot = total ? `<tr class="total">${[...total.lead, ...cells(total.t)].map(td).join("")}</tr>` : "";
   return `<div class="scroll"><table><thead>${head}</thead><tbody>${body}${foot}</tbody></table></div>`;
 }
 function adCard(a, money) {
@@ -236,7 +238,7 @@ function render() {
   const tiles = [["Ads", num(all.ads)], ["Spend", money(all.spend)], ["Impressions", num(all.impressions)], ["Clicks", num(all.clicks)], ["CTR", all.ctr.toFixed(2) + "%"], ["WA conversations", num(all.conv)], ["Cost / conv.", money(all.cpc)], ["Leads", num(all.leads)]];
   let html = `<section class="title"><h2>${esc(model.title)}</h2>
     <p>Ads with spend in the period, grouped by campaign. Inside each campaign every location is shown separately with its own creatives, sorted by spend. Live Meta sync${live?.syncedLabel ? " · " + esc(live.syncedLabel.replace("Live Meta sync · ", "")) : ""}.</p></section>
-    <div class="tiles">${tiles.map(([l, v]) => `<div class="tile"><small>${l}</small><strong>${v}</strong></div>`).join("")}</div>`;
+    <div class="tiles">${tiles.map(([l, v], i) => `<div class="tile${l === "Spend" ? " accent" : ""}"><small>${l}</small><strong>${v}</strong></div>`).join("")}</div>`;
   html += messageCard(account, messageFor(account, ads));
   html += `<h3>Campaigns at a glance</h3>` + table(money, "Campaign",
     model.sections.map((s, i) => ({ target: "cp" + i, lead: [esc(s.name), s.locs.map((l) => (l.code === "ALL" ? "All" : l.code)).join(", ")], t: s.t })),
