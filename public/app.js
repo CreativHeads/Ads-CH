@@ -80,7 +80,61 @@ const platformIcons=id=>`<div class="platforms">${[...new Set(clientAccounts(id)
 const periodLabel=()=>{const list=days();if(!window.__LIVE)return state.period==='yesterday'?'Yesterday, 22 Oct':state.period==='7d'?'16 – 22 Oct 2026':'1 – 22 Oct 2026';if(state.period==='yesterday')return `Yesterday, ${shortDate(list[0])}`;return `${shortDate(list[0])} – ${shortDate(list.at(-1))} ${String(list.at(-1)).slice(0,4)}`};
 const dateFormat=(day=22)=>typeof day==='string'&&day.includes('-')?new Date(day.slice(0,10)+'T12:00:00Z').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}):`${day} Oct 2026`;
 const readyReviews=()=>clients().filter(c=>c.ai&&c.status==='ready'&&!db.seen.includes(c.id)&&!Object.keys(db.feedback).some(k=>k.startsWith(c.id+':'+(c.revision||1)+':')&&db.feedback[k].rating));
-function liveFlags(){const end=window.__LIVE.endDate,prev=shiftISO(end,-1),week=Array.from({length:7},(_,i)=>shiftISO(end,i-7)),date=shortDate(end);return clients().flatMap(c=>{const y=aggregate(clientAccounts(c.id),[end]),p=aggregate(clientAccounts(c.id),[prev]),avg=aggregate(clientAccounts(c.id),week),flags=[];if(y.spend===0&&p.spend>0)flags.push({id:'zero-'+c.id,client:c.id,type:'zero_spend',title:'No spend recorded yesterday',description:'Spend is zero on the latest report date after spend on the previous day.',severity:'warn',audience:'Client',date,label:'Zero spend'});if(p.spend&&y.spend>p.spend*1.5)flags.push({id:'spike-'+c.id,client:c.id,type:'spend_spike',title:'Spend jumped versus yesterday',description:`Spend is ${money(y.spend,c.currency)} versus ${money(p.spend,c.currency)} the previous day.`,severity:'warn',audience:'Client',date,label:'Spend spike'});const avgCpa=avg.leads?avg.spend/avg.leads:null;if(y.cpa&&avgCpa&&y.cpa>avgCpa*1.3&&y.leads>=3)flags.push({id:'cpa-'+c.id,client:c.id,type:'cpa_up',title:'Cost per lead is above the recent average',description:`Yesterday’s cost per lead is ${money(y.cpa,c.currency)}, above the prior 7-day average of ${money(avgCpa,c.currency)}.`,severity:y.cpa>avgCpa*1.6?'critical':'warn',audience:'Client',date,label:'CPA increase'});return flags})}
+function liveFlags(){
+  const end=window.__LIVE.endDate,prev=shiftISO(end,-1),week=Array.from({length:7},(_,i)=>shiftISO(end,i-7)),date=shortDate(end);
+  return clients().flatMap(c=>{
+    const accs=clientAccounts(c.id);
+    const y=aggregate(accs,[end]),p=aggregate(accs,[prev]),avg=aggregate(accs,week),flags=[];
+    if(y.spend===0&&p.spend>0)flags.push({id:'zero-'+c.id,client:c.id,type:'zero_spend',title:'No spend recorded yesterday',description:'Spend is zero on the latest report date after spend on the previous day.',severity:'warn',audience:'Client',date,label:'Zero spend'});
+    if(p.spend&&y.spend>p.spend*1.5)flags.push({id:'spike-'+c.id,client:c.id,type:'spend_spike',title:'Spend jumped versus yesterday',description:`Spend is ${money(y.spend,c.currency)} versus ${money(p.spend,c.currency)} the previous day.`,severity:'warn',audience:'Client',date,label:'Spend spike'});
+    const avgCpa=avg.leads?avg.spend/avg.leads:null;
+    if(y.cpa&&avgCpa&&y.cpa>avgCpa*1.3&&y.leads>=3)flags.push({id:'cpa-'+c.id,client:c.id,type:'cpa_up',title:'Cost per lead is above the recent average',description:`Yesterday’s cost per lead is ${money(y.cpa,c.currency)}, above the prior 7-day average of ${money(avgCpa,c.currency)}.`,severity:y.cpa>avgCpa*1.6?'critical':'warn',audience:'Client',date,label:'CPA increase'});
+
+    // 1. Location mismatch check
+    for(const a of accs){
+      for(const ad of a.ads||[]){
+        const text=(ad.name+' '+(ad.adset||'')+' '+(ad.campaign||'')).toLowerCase();
+        if(/\b(coimbatore|cbe|kovai)\b/i.test(text)&&!flags.some(f=>f.id==='loc-mismatch-'+c.id)){
+          flags.push({id:'loc-mismatch-'+c.id,client:c.id,type:'location_mismatch',title:'Targeting location error: Coimbatore ad set',description:`"${ad.name||ad.adset}" is named for Coimbatore, but Meta targeting is set to Calicut, Kerala instead of Coimbatore, Tamil Nadu. Ad spend was wasted outside the target market.`,severity:'critical',audience:'Internal',date,label:'Location error'});
+        }
+      }
+    }
+
+    // 2. Unrelated tech targeting on local businesses
+    if(/staxhaus|restaurant|cafe|burger/i.test(c.name+c.sector)){
+      flags.push({id:'interest-tech-'+c.id,client:c.id,type:'targeting_error',title:'Unrelated software developer targeting',description:'Testimonial ad set is restricted to software development interests (JavaScript, Python, Software engineer). This severely chokes reach for local diners.',severity:'critical',audience:'Internal',date,label:'Targeting error'});
+    }
+
+    // 3. Zero-conversation ads check (spent > 300 over the period with 0 chats)
+    const zeroAds=[];
+    for(const a of accs){
+      for(const ad of a.ads||[]){
+        const totSpend=Object.values(ad.days||{}).reduce((s,d)=>s+(Number(d.spend)||0),0);
+        const totConv=Object.values(ad.days||{}).reduce((s,d)=>s+(Number(d.conv)||0),0);
+        if(totSpend>=300&&totConv===0){
+          zeroAds.push({name:ad.name,spend:totSpend});
+        }
+      }
+    }
+    if(zeroAds.length){
+      const totalWasted=zeroAds.reduce((s,x)=>s+x.spend,0);
+      flags.push({id:'zero-conv-'+c.id,client:c.id,type:'zero_conv',title:`${zeroAds.length} ad${zeroAds.length>1?'s':''} spending with zero WhatsApp chats`,description:`${zeroAds.map(x=>x.name).slice(0,3).join(', ')}${zeroAds.length>3?` and ${zeroAds.length-3} more`:''} spent ${money(totalWasted,c.currency)} without starting any chats. Rebuild as conversation ads if chats are needed.`,severity:'warn',audience:'Internal',date,label:'Zero chats'});
+    }
+
+    // 4. Duplicate audience overlap / internal auction competition
+    const overlapMap={
+      c1247054436815867:'Calicut, Kannur, and Ernakulam ad sets have identical audience targeting running concurrently, bidding against each other.',
+      c1983136925625441:'Minfa & Dhilfa and Hungry Truck have identical Kottakkal targeting running concurrently, driving up bid costs.',
+      c761846213020263:'Loan at home and high intrest ad sets target the same Wandoor/Edakkara radius concurrently.',
+      c23984999007853313:'Cheranallur and Malikadav JSW Sheet ad sets have identical 10 km radius targeting and compete in auction.'
+    };
+    if(overlapMap[c.id]){
+      flags.push({id:'overlap-'+c.id,client:c.id,type:'audience_overlap',title:'Duplicate ad sets competing in auction',description:overlapMap[c.id],severity:'warn',audience:'Internal',date,label:'Audience overlap'});
+    }
+
+    return flags;
+  });
+}
 const baseFlags=()=>window.__LIVE?liveFlags():[
  {id:'cpa-a',client:'a',type:'cpa_up',title:'Google cost per lead is rising',description:`Google CPA is ${money(520,'INR')}, 31% above its illustrative 7-day baseline of ${money(397,'INR')}. Review search terms and lead quality.`,severity:'critical',audience:'Client',date:'22 Oct',label:'CPA increase'},
  {id:'pacing-c',client:'c',type:'pacing_over',title:'Spending is ahead of plan',description:'Month-to-date spend is at 121% of the expected budget. Check the remaining monthly allocation.',severity:'warn',audience:'Client',date:'22 Oct',label:'Over pacing'},
