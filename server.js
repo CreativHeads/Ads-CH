@@ -145,6 +145,7 @@ function buildLive(rows, endDate) {
       leads: Number(row.actions_lead) || 0,
       clicks: Number(row.link_clicks) || 0,
       impressions: Number(row.impressions) || 0,
+      conv: Number(row.actions_onsite_conversion_messaging_conversation_started_7d) || 0,
     };
   }
   const spendOf = (account) => Object.values(account.days).reduce((sum, day) => sum + day.spend, 0);
@@ -200,6 +201,14 @@ function buildLive(rows, endDate) {
   };
 }
 
+// Windsor is sometimes slow or down; try again soon instead of waiting for the 3-hour sync.
+let retryTimer = null;
+function retrySync() {
+  if (retryTimer) return;
+  retryTimer = setTimeout(() => { retryTimer = null; syncLive(); }, 5 * 60 * 1000);
+  retryTimer.unref();
+}
+
 async function syncLive() {
   const key = process.env.WINDSOR_API_KEY;
   const cachePath = path.join(dataDir, "live.json");
@@ -209,13 +218,14 @@ async function syncLive() {
   try {
     const url = new URL("https://connectors.windsor.ai/facebook");
     url.searchParams.set("api_key", key);
-    url.searchParams.set("fields", "date,account_id,account_name,account_currency,spend,impressions,link_clicks,actions_lead");
+    url.searchParams.set("fields", "date,account_id,account_name,account_currency,spend,impressions,link_clicks,actions_lead,actions_onsite_conversion_messaging_conversation_started_7d");
     url.searchParams.set("date_from", startDate);
     url.searchParams.set("date_to", endDate);
-    const response = await fetch(url, { signal: AbortSignal.timeout(20000) });
+    const response = await fetch(url, { signal: AbortSignal.timeout(90000) });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       console.error("live sync failed", response.status, String(payload.error || payload.message || "request failed"));
+      retrySync();
       return null;
     }
     const rows = Array.isArray(payload) ? payload : payload.data || [];
@@ -229,6 +239,7 @@ async function syncLive() {
     return model;
   } catch (error) {
     console.error("live sync failed", String(error.message || error).replace(/api_key=[^&\s]+/gi, "api_key=redacted"));
+    retrySync();
     return null;
   }
 }
