@@ -19,7 +19,20 @@ function checkPassword(password, stored) {
   const a = Buffer.from(hash, "hex"), b = crypto.scryptSync(password, salt, 64);
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
-const publicUser = (u) => u && { id: u.id, name: u.name, username: u.username, role: u.role, disabled: !!u.disabled, created_at: u.created_at, last_login_at: u.last_login_at };
+// clients: null = every client; otherwise the client ids this person may see (admins always see all).
+const parseClients = (raw) => { try { const v = JSON.parse(raw); return Array.isArray(v) ? v.map(String) : null; } catch { return null; } };
+const publicUser = (u) => u && { id: u.id, name: u.name, username: u.username, role: u.role, disabled: !!u.disabled, created_at: u.created_at, last_login_at: u.last_login_at, clients: u.role === "admin" ? null : parseClients(u.clients) };
+export function allowedClients(user) {
+  if (!user || user.role === "admin") return null;
+  const list = parseClients(user.clients);
+  return list ? new Set(list) : null;
+}
+function cleanClients(v) {
+  if (v === null) return null;
+  if (!Array.isArray(v)) return undefined;
+  const list = [...new Set(v.map((x) => String(x).slice(0, 64)))].slice(0, 300);
+  return list.length ? list : undefined; // at least one client, or null for all
+}
 
 function cookies(req) {
   return Object.fromEntries(String(req.headers.cookie || "").split(";").map((p) => p.trim().split("=")).filter((p) => p[0]).map(([k, ...v]) => [k, decodeURIComponent(v.join("="))]));
@@ -51,6 +64,7 @@ export function createAuth(db, { readBody, sendJson }) {
       expires_at TEXT NOT NULL
     );
   `);
+  if (!db.prepare("PRAGMA table_info(users)").all().some((c) => c.name === "clients")) db.exec("ALTER TABLE users ADD COLUMN clients TEXT");
   const userCount = () => db.prepare("SELECT COUNT(*) AS n FROM users").get().n;
   const activeAdmins = () => db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND disabled = 0").get().n;
 
@@ -173,7 +187,7 @@ export function createAuth(db, { readBody, sendJson }) {
 
     if (req.method === "POST" && pathname === "/api/users") {
       const body = await readJson(req);
-      const error = checkNew(body) || (!ROLES.includes(body.role) ? "Pick a role." : null);
+      const error = checkNew(body) || (!ROLES.includes(body.role) ? "Pick a role." : null) || (body.clients !== undefined && body.clients !== null && cleanClients(body.clients) === undefined ? "Pick at least one client, or All clients." : null);
       if (error) return sendJson(res, 400, { error }), true;
       return sendJson(res, 200, { user: publicUser(insertUser(body)) }), true;
     }
@@ -192,6 +206,9 @@ export function createAuth(db, { readBody, sendJson }) {
           return sendJson(res, 400, { error: self ? "You cannot remove your own admin access." : "Keep at least one active admin." }), true;
         }
         if (body.password !== undefined && String(body.password).length < 8) return sendJson(res, 400, { error: "Use at least 8 characters." }), true;
+        const clients = body.clients !== undefined ? cleanClients(body.clients) : "keep";
+        if (clients === undefined) return sendJson(res, 400, { error: "Pick at least one client, or All clients." }), true;
+        if (clients !== "keep") db.prepare("UPDATE users SET clients = ? WHERE id = ?").run(clients === null ? null : JSON.stringify(clients), user.id);
         const name = body.name !== undefined ? validName(body.name) : user.name;
         if (!name) return sendJson(res, 400, { error: "Enter a name." }), true;
         db.prepare("UPDATE users SET name = ?, role = ?, disabled = ? WHERE id = ?")
@@ -223,8 +240,9 @@ export function createAuth(db, { readBody, sendJson }) {
     return null;
   }
   function insertUser(body) {
-    const info = db.prepare("INSERT INTO users (username, name, role, password_hash, created_at) VALUES (?,?,?,?,?)")
-      .run(String(body.username).trim().toLowerCase(), validName(body.name), body.role, hashPassword(String(body.password)), new Date().toISOString());
+    const clients = cleanClients(body.clients ?? null);
+    const info = db.prepare("INSERT INTO users (username, name, role, password_hash, created_at, clients) VALUES (?,?,?,?,?,?)")
+      .run(String(body.username).trim().toLowerCase(), validName(body.name), body.role, hashPassword(String(body.password)), new Date().toISOString(), clients ? JSON.stringify(clients) : null);
     return db.prepare("SELECT * FROM users WHERE id = ?").get(Number(info.lastInsertRowid));
   }
 

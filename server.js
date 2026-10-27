@@ -4,7 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
-import { createAuth } from "./auth.js";
+import { createAuth, allowedClients } from "./auth.js";
 import { createInsights, buildAudit } from "./insights.js";
 
 // Hostinger's LiteSpeed loader require()s this file, so no top-level await.
@@ -395,6 +395,17 @@ async function sendTelegram(text) {
   return { delivered: true, error: null };
 }
 
+// Users limited to some clients only receive those clients' data (admins and unrestricted users get everything).
+function visibleLive(model, user) {
+  const allowed = allowedClients(user);
+  if (!allowed) return model;
+  return { ...model, clients: (model.clients || []).filter((c) => allowed.has(c.id)), accounts: (model.accounts || []).filter((a) => allowed.has(a.client)) };
+}
+function visibleAccountNames(user) {
+  const allowed = allowedClients(user);
+  return allowed ? new Set((readLive().accounts || []).filter((a) => allowed.has(a.client)).map((a) => a.name)) : null;
+}
+
 function insightRange(params) {
   const from = params.get("from") || "", to = params.get("to") || "", account = String(params.get("account") || "");
   const span = (Date.parse(to) - Date.parse(from)) / 86400000;
@@ -409,6 +420,8 @@ async function handleInsights(req, res, pathname, user) {
   else if (req.method === "POST" && pathname === "/api/insights/summary") range = insightRange(new URLSearchParams(JSON.parse((await readBody(req, 5000)).toString("utf8") || "{}")));
   else return sendJson(res, 404, { error: "not found" });
   if (!range) return sendJson(res, 400, { error: "Pick a client and a date range of up to 93 days." });
+  const names = visibleAccountNames(user);
+  if (names && !names.has(range.account)) return sendJson(res, 403, { error: "You don't have access to this client." });
   const currency = readLive().accounts?.find((a) => a.name === range.account)?.currency === "AED" ? "AED " : "₹";
   const money = (v) => (v == null ? "—" : currency + v.toLocaleString("en-IN", { maximumFractionDigits: v >= 100 ? 0 : 2 }));
   const audit = buildAudit(await insights.raw(range.from, range.to), range.account, money);
@@ -426,7 +439,9 @@ async function handleApi(req, res, pathname, user) {
     const to = params.get("to") || "";
     const span = (Date.parse(to) - Date.parse(from)) / 86400000;
     if (!isoDate.test(from) || !isoDate.test(to) || !(span >= 0 && span <= 92)) return sendJson(res, 400, { error: "invalid dates" });
-    return sendJson(res, 200, await fetchCreatives(from, to));
+    const body = await fetchCreatives(from, to), names = visibleAccountNames(user);
+    if (!names) return sendJson(res, 200, body);
+    return sendJson(res, 200, { ...body, accounts: body.accounts.filter((a) => names.has(a)), ads: body.ads.filter((a) => names.has(a.account)) });
   }
 
   if (pathname === "/api/insights" || pathname === "/api/insights/summary") return handleInsights(req, res, pathname, user);
@@ -434,7 +449,7 @@ async function handleApi(req, res, pathname, user) {
   if (!db && pathname !== "/api/live") return sendJson(res, 503, { error: "database unavailable" });
 
   if (req.method === "GET" && pathname === "/api/live") {
-    return sendJson(res, 200, readLive());
+    return sendJson(res, 200, visibleLive(readLive(), user));
   }
 
   if (req.method === "GET" && pathname === "/api/state") {

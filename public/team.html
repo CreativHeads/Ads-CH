@@ -41,6 +41,20 @@
     .msg.ok{display:block;background:#eef6e8;color:#2c5b28}
     .msg.err{display:block;background:#fbefec;color:var(--red)}
     .roles{margin:0;padding-left:18px;color:var(--muted);font-size:13px}
+    .access{background:#fff;color:var(--forest);border:1px solid #cfd6cf;font-weight:600;text-align:left;width:100%;max-width:220px}
+    dialog{border:0;border-radius:16px;padding:0;width:min(440px,calc(100vw - 24px));box-shadow:0 20px 60px rgba(0,0,0,.25)}
+    dialog::backdrop{background:rgba(21,40,33,.45)}
+    .dlg{padding:20px}
+    .dlg h3{margin:0 0 4px;color:var(--forest);font-size:17px}
+    .dlg .opts{display:grid;gap:8px;margin:14px 0}
+    .dlg .opt{flex-direction:row;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-weight:400}
+    .dlg .opt input{margin-top:3px;min-height:0}
+    .dlg .list{max-height:min(320px,45vh);overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px}
+    .dlg .list label{flex-direction:row;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;font-weight:400;font-size:13.5px}
+    .dlg .list label:hover{background:#f4f7f1}
+    .dlg .list input{min-height:0}
+    .dlg .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+    .dlg input[type=search]{width:100%;margin-bottom:8px}
     [hidden]{display:none!important}
     @media (max-width:600px){
       .bar{padding:12px 16px}.bar .who{margin-left:0;width:100%}
@@ -86,6 +100,7 @@
           </select>
         </label>
         <label>Password (8+ characters) <input name="password" type="text" minlength="8" required autocomplete="off" /></label>
+        <label>Client access <button type="button" class="access" id="add-access">All clients</button></label>
         <button type="submit">Add user</button>
       </form>
       <div class="msg" id="add-msg"></div>
@@ -93,6 +108,7 @@
         <li><strong>Admin</strong>: everything, including this page.</li>
         <li><strong>Performance team</strong>: reviews, feedback, reports and sending; cannot manage users.</li>
         <li><strong>Read-only staff</strong>: can view everything and download PDFs, but cannot change anything.</li>
+        <li><strong>Client access</strong>: limit a Performance or Staff member to chosen clients; they only see those clients' data. Admins always see every client.</li>
       </ul>
     </section>
 
@@ -100,15 +116,26 @@
       <h2>Team members</h2>
       <p class="sub" id="count"></p>
       <div class="scroll"><table>
-        <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Name</th><th>Role</th><th>Client access</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead>
         <tbody id="users"></tbody>
       </table></div>
       <div class="msg" id="list-msg"></div>
     </section>
   </main>
+  <dialog id="access-dlg"><form method="dialog" class="dlg" id="access-form">
+    <h3 id="access-title">Client access</h3>
+    <p class="sub" style="margin:0">Choose which clients this person can see.</p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="mode" value="all" /><span><strong>All clients</strong><br><small class="sub">Including clients added later.</small></span></label>
+      <label class="opt"><input type="radio" name="mode" value="some" /><span><strong>Only these clients</strong></span></label>
+    </div>
+    <div id="access-pick"><input type="search" id="access-search" placeholder="Search clients..." /><div class="list" id="access-list"></div></div>
+    <div class="msg" id="access-msg"></div>
+    <div class="row"><button type="button" class="ghost" id="access-cancel">Cancel</button><button type="submit" id="access-save">Save</button></div>
+  </form></dialog>
   <script>
     (function () {
-      var me = null;
+      var me = null, clients = [], addClients = null, users = [];
       var ROLE = { admin: "Admin", performance: "Performance team", staff: "Read-only staff" };
       var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
       var when = function (iso) { return iso ? new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Never"; };
@@ -121,12 +148,53 @@
       }
       function show(id, text, ok) { var el = document.getElementById(id); el.textContent = text; el.className = "msg " + (ok ? "ok" : "err"); }
 
+      function accessLabel(list) {
+        if (!list) return "All clients";
+        if (list.length === 1) { var c = clients.find(function (x) { return x.id === list[0]; }); return c ? c.name : "1 client"; }
+        return list.length + " of " + clients.length + " clients";
+      }
+      var dlg = document.getElementById("access-dlg"), onSave = null;
+      function renderPick() {
+        document.getElementById("access-pick").hidden = !document.querySelector("#access-form input[value=some]").checked;
+      }
+      function openAccess(title, list, save) {
+        document.getElementById("access-title").textContent = title;
+        document.getElementById("access-msg").className = "msg";
+        document.getElementById("access-search").value = "";
+        document.querySelector("#access-form input[value=" + (list ? "some" : "all") + "]").checked = true;
+        var chosen = new Set(list || []);
+        document.getElementById("access-list").innerHTML = clients.map(function (c) {
+          return "<label data-name='" + esc(c.name.toLowerCase()) + "'><input type='checkbox' value='" + esc(c.id) + "'" + (chosen.has(c.id) ? " checked" : "") + " /> " + esc(c.name) + "</label>";
+        }).join("") || "<p class='sub'>No clients yet.</p>";
+        renderPick();
+        onSave = save;
+        dlg.showModal();
+      }
+      document.getElementById("access-form").addEventListener("change", renderPick);
+      document.getElementById("access-search").addEventListener("input", function (e) {
+        var q = e.target.value.trim().toLowerCase();
+        document.querySelectorAll("#access-list label").forEach(function (l) { l.hidden = !!q && l.dataset.name.indexOf(q) < 0; });
+      });
+      document.getElementById("access-cancel").addEventListener("click", function () { dlg.close(); });
+      document.getElementById("access-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var some = document.querySelector("#access-form input[value=some]").checked;
+        var list = some ? Array.prototype.map.call(document.querySelectorAll("#access-list input:checked"), function (i) { return i.value; }) : null;
+        if (some && !list.length) { show("access-msg", "Tick at least one client, or choose All clients."); return; }
+        Promise.resolve(onSave(list)).then(function () { dlg.close(); }).catch(function (err) { show("access-msg", err.message); });
+      });
+      document.getElementById("add-access").addEventListener("click", function () {
+        openAccess("Client access for the new user", addClients, function (list) { addClients = list; document.getElementById("add-access").textContent = accessLabel(list); });
+      });
+
       function load() {
         api("GET", "/api/users").then(function (j) {
+          users = j.users;
           var rows = j.users.map(function (u) {
             var self = u.id === me.id;
             return "<tr data-id='" + u.id + "'><td><strong>" + esc(u.name) + (self ? " (you)" : "") + "</strong><small>" + esc(u.username) + "</small></td>" +
               "<td><select data-act='role'" + (self ? " disabled" : "") + ">" + Object.keys(ROLE).map(function (r) { return "<option value='" + r + "'" + (u.role === r ? " selected" : "") + ">" + ROLE[r] + "</option>"; }).join("") + "</select></td>" +
+              "<td>" + (u.role === "admin" ? "<small>All clients (admin)</small>" : "<button type='button' class='access' data-act='access'>" + esc(accessLabel(u.clients)) + "</button>") + "</td>" +
               "<td>" + (u.disabled ? "<span class='badge off'>Disabled</span>" : "<span class='badge'>Active</span>") + "</td>" +
               "<td><small>Last sign-in: " + when(u.last_login_at) + "</small></td>" +
               "<td><div class='actions'><button type='button' class='ghost' data-act='reset'>Reset password</button>" +
@@ -149,7 +217,12 @@
         var b = e.target.closest("button[data-act]");
         if (!b) return;
         var tr = b.closest("tr"), id = tr.dataset.id, name = tr.querySelector("strong").textContent;
-        if (b.dataset.act === "reset") {
+        if (b.dataset.act === "access") {
+          var u = users.find(function (x) { return String(x.id) === id; });
+          openAccess("Client access for " + name.replace(" (you)", ""), u.clients, function (list) {
+            return api("PATCH", "/api/users/" + id, { clients: list }).then(function () { show("list-msg", name + " now sees " + accessLabel(list).toLowerCase() + ".", true); load(); });
+          });
+        } else if (b.dataset.act === "reset") {
           var pw = prompt("New password for " + name + " (at least 8 characters):");
           if (!pw) return;
           api("PATCH", "/api/users/" + id, { password: pw }).then(function () { show("list-msg", "Password reset for " + name + ". They are signed out everywhere until they use the new one.", true); }).catch(function (err) { show("list-msg", err.message); });
@@ -165,7 +238,8 @@
       document.getElementById("add").addEventListener("submit", function (e) {
         e.preventDefault();
         var form = e.target, body = Object.fromEntries(new FormData(form));
-        api("POST", "/api/users", body).then(function (j) { show("add-msg", j.user.name + " can now sign in as " + j.user.username + ".", true); form.reset(); load(); }).catch(function (err) { show("add-msg", err.message); });
+        body.clients = body.role === "admin" ? null : addClients;
+        api("POST", "/api/users", body).then(function (j) { show("add-msg", j.user.name + " can now sign in as " + j.user.username + " and sees " + accessLabel(j.user.clients).toLowerCase() + ".", true); form.reset(); addClients = null; document.getElementById("add-access").textContent = "All clients"; load(); }).catch(function (err) { show("add-msg", err.message); });
       });
       document.getElementById("password").addEventListener("submit", function (e) {
         e.preventDefault();
@@ -179,7 +253,12 @@
       api("GET", "/api/auth/me").then(function (j) {
         me = j.user;
         document.getElementById("who").textContent = me.name + " · " + ROLE[me.role];
-        if (me.role === "admin") { document.getElementById("admin").hidden = false; load(); }
+        if (me.role === "admin") {
+          document.getElementById("admin").hidden = false;
+          fetch("/api/live").then(function (r) { return r.ok ? r.json() : null; }).then(function (live) {
+            clients = ((live && live.clients) || []).map(function (c) { return { id: c.id, name: c.name }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+          }).finally(load);
+        }
       }).catch(function () {});
     })();
   </script>
