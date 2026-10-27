@@ -5,6 +5,7 @@ import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { createAuth } from "./auth.js";
+import { createInsights, buildAudit } from "./insights.js";
 
 // Hostinger's LiteSpeed loader require()s this file, so no top-level await.
 const require = createRequire(import.meta.url);
@@ -105,6 +106,12 @@ if (DatabaseSync) {
 
 // readBody/sendJson are function declarations below, so they are hoisted and safe to pass here.
 const auth = db ? createAuth(db, { readBody, sendJson }) : null;
+const insights = db ? createInsights({
+  db,
+  windsorKey: () => process.env.WINDSOR_API_KEY,
+  openaiKey: () => process.env.OPENAI_API_KEY,
+  model: () => process.env.OPENAI_MODEL || "gpt-4.1-mini",
+}) : null;
 
 const DENY = ["windsor", "openai", "gpt", "chatgpt", "supabase", "vercel", "telegram", "birch", "bïrch", "meta api"];
 function blocked(text) {
@@ -388,7 +395,31 @@ async function sendTelegram(text) {
   return { delivered: true, error: null };
 }
 
-async function handleApi(req, res, pathname) {
+function insightRange(params) {
+  const from = params.get("from") || "", to = params.get("to") || "", account = String(params.get("account") || "");
+  const span = (Date.parse(to) - Date.parse(from)) / 86400000;
+  if (!account || !isoDate.test(from) || !isoDate.test(to) || !(span >= 0 && span <= 92)) return null;
+  return { account, from, to };
+}
+
+async function handleInsights(req, res, pathname, user) {
+  if (!insights) return sendJson(res, 503, { error: "database unavailable" });
+  let range;
+  if (req.method === "GET" && pathname === "/api/insights") range = insightRange(new URL(req.url || "/", "http://localhost").searchParams);
+  else if (req.method === "POST" && pathname === "/api/insights/summary") range = insightRange(new URLSearchParams(JSON.parse((await readBody(req, 5000)).toString("utf8") || "{}")));
+  else return sendJson(res, 404, { error: "not found" });
+  if (!range) return sendJson(res, 400, { error: "Pick a client and a date range of up to 93 days." });
+  const currency = readLive().accounts?.find((a) => a.name === range.account)?.currency === "AED" ? "AED " : "₹";
+  const money = (v) => (v == null ? "—" : currency + v.toLocaleString("en-IN", { maximumFractionDigits: v >= 100 ? 0 : 2 }));
+  const audit = buildAudit(await insights.raw(range.from, range.to), range.account, money);
+  if (req.method === "POST") {
+    const summary = await insights.writeSummary(audit, range, user);
+    return sendJson(res, 200, { summary });
+  }
+  return sendJson(res, 200, { ...range, currency: currency.trim(), audit, summary: insights.savedSummary(range.account, range.from, range.to), openai: insights.openaiConnected(), model: insights.model() });
+}
+
+async function handleApi(req, res, pathname, user) {
   if (req.method === "GET" && pathname === "/api/creatives") {
     const params = new URL(req.url || "/", "http://localhost").searchParams;
     const from = params.get("from") || "";
@@ -397,6 +428,8 @@ async function handleApi(req, res, pathname) {
     if (!isoDate.test(from) || !isoDate.test(to) || !(span >= 0 && span <= 92)) return sendJson(res, 400, { error: "invalid dates" });
     return sendJson(res, 200, await fetchCreatives(from, to));
   }
+
+  if (pathname === "/api/insights" || pathname === "/api/insights/summary") return handleInsights(req, res, pathname, user);
 
   if (!db && pathname !== "/api/live") return sendJson(res, 503, { error: "database unavailable" });
 
@@ -497,7 +530,7 @@ async function handleRequestApi(req, res, pathname) {
   if (!user) return sendJson(res, 401, { error: "signed out" });
   // read-only staff can look at everything but change nothing
   if (req.method !== "GET" && user.role === "staff") return sendJson(res, 403, { error: "Read-only account." });
-  return handleApi(req, res, pathname);
+  return handleApi(req, res, pathname, user);
 }
 
 const server = http.createServer((req, res) => {
@@ -506,7 +539,8 @@ const server = http.createServer((req, res) => {
     handleRequestApi(req, res, url.pathname).catch((error) => {
       console.error(error);
       if (res.headersSent) return;
-      sendJson(res, error.status || 500, { error: "request failed" });
+      // errors given a status were written for the user; anything else stays generic
+      sendJson(res, error.status || 500, { error: error.status ? error.message : "request failed" });
     });
     return;
   }
@@ -519,7 +553,7 @@ const server = http.createServer((req, res) => {
     res.end();
     return;
   }
-  const pages = { "/creatives": "/creatives.html", "/login": "/login.html", "/team": "/team.html" };
+  const pages = { "/creatives": "/creatives.html", "/login": "/login.html", "/team": "/team.html", "/insights": "/insights.html" };
   const file = fileFor(pages[url.pathname] || decodeURIComponent(url.pathname));
   if (!file) {
     res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
