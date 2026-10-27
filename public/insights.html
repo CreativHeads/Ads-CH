@@ -207,6 +207,53 @@
       .target dl{grid-template-columns:80px 1fr}
       .axis span:nth-child(odd){visibility:hidden}
     }
+    /* Skeleton loading shimmer system */
+    @keyframes ch-shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .ch-skeleton {
+      background: linear-gradient(90deg, #edf2f7 0%, #f7f9fc 50%, #edf2f7 100%);
+      background-size: 200% 100%;
+      animation: ch-shimmer 1.5s ease-in-out infinite;
+      border-radius: 6px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .ch-skeleton.block { display: block; }
+    .ch-skeleton-text { height: 12px; border-radius: 4px; margin-bottom: 6px; }
+    .ch-skeleton-circle { border-radius: 50% !important; flex-shrink: 0; }
+    .ch-skeleton-dark {
+      background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.06) 100%);
+      background-size: 200% 100%;
+      animation: ch-shimmer 1.5s ease-in-out infinite;
+    }
+    .skeleton-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: 0 4px 16px rgba(10,99,224,0.10);
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 13px;
+      color: #0a63e0;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .skeleton-pill .pulse-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #0a63e0;
+      animation: ch-pulse 1.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes ch-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.8); }
+    }
   </style>
 </head>
 <body>
@@ -225,7 +272,70 @@
       <button type="submit" class="btn lime">Analyse</button>
     </form>
   </header>
-  <main id="out" aria-live="polite"><div class="status"><div class="spinner"></div>Loading…</div></main>
-  <script type="module" src="/insights.js?v=4"></script>
+  <main id="out" aria-live="polite">
+    <div class="skeleton-pill"><span class="pulse-dot"></span>Preparing performance insights…</div>
+    <section class="hero" aria-hidden="true">
+      <div style="flex:1">
+        <span class="ch-skeleton ch-skeleton-text" style="width:110px;height:12px;margin-bottom:8px"></span>
+        <div class="ch-skeleton" style="width:240px;height:34px;margin-bottom:8px"></div>
+        <div class="ch-skeleton ch-skeleton-text" style="width:380px;height:14px"></div>
+      </div>
+      <div class="chips">
+        <div class="ch-skeleton" style="width:130px;height:28px;border-radius:99px"></div>
+        <div class="ch-skeleton" style="width:110px;height:28px;border-radius:99px"></div>
+      </div>
+    </section>
+    <div class="kpis" aria-hidden="true">
+      <div class="kpi accent"><span class="ch-skeleton ch-skeleton-dark ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton ch-skeleton-dark" style="width:80%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:60%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:75%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:55%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:80%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:70%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:55%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:75%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:45%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:65%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:70%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:60%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:75%;height:26px"></div></div>
+    </div>
+    <section class="card" aria-hidden="true" style="padding:22px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="ch-skeleton ch-skeleton-circle" style="width:22px;height:22px"></div>
+          <div class="ch-skeleton" style="width:160px;height:18px"></div>
+        </div>
+        <div class="ch-skeleton" style="width:90px;height:24px;border-radius:99px"></div>
+      </div>
+      <div class="ch-skeleton" style="width:92%;height:20px;margin-bottom:12px"></div>
+      <div class="ch-skeleton" style="width:65%;height:14px;margin-bottom:20px"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:20px">
+        <div style="background:#f8fafd;border:1px solid #eef2f6;border-radius:12px;padding:16px"><div class="ch-skeleton" style="width:40%;height:14px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:95%"></div><div class="ch-skeleton ch-skeleton-text" style="width:88%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div>
+        <div style="background:#f8fafd;border:1px solid #eef2f6;border-radius:12px;padding:16px"><div class="ch-skeleton" style="width:40%;height:14px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:95%"></div><div class="ch-skeleton ch-skeleton-text" style="width:88%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div>
+        <div style="background:#f8fafd;border:1px solid #eef2f6;border-radius:12px;padding:16px"><div class="ch-skeleton" style="width:40%;height:14px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:95%"></div><div class="ch-skeleton ch-skeleton-text" style="width:88%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div>
+      </div>
+      <div style="border-top:1px solid #eef2f6;padding-top:16px">
+        <div class="ch-skeleton" style="width:140px;height:14px;margin-bottom:12px"></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center"><div class="ch-skeleton ch-skeleton-circle" style="width:18px;height:18px"></div><div class="ch-skeleton" style="flex:1;height:14px"></div></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center"><div class="ch-skeleton ch-skeleton-circle" style="width:18px;height:18px"></div><div class="ch-skeleton" style="flex:1;height:14px"></div></div>
+      </div>
+    </section>
+    <section class="card" aria-hidden="true" style="padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="ch-skeleton" style="width:120px;height:18px;margin-bottom:6px"></div>
+          <div class="ch-skeleton ch-skeleton-text" style="width:180px;height:12px"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div class="ch-skeleton" style="width:88px;height:32px;border-radius:99px"></div>
+          <div class="ch-skeleton" style="width:110px;height:32px;border-radius:99px"></div>
+          <div class="ch-skeleton" style="width:96px;height:32px;border-radius:99px"></div>
+          <div class="ch-skeleton" style="width:70px;height:32px;border-radius:99px"></div>
+        </div>
+      </div>
+      <div class="findings">
+        <div class="finding" style="border-left-color:#e2e8f0"><div class="ch-skeleton ch-skeleton-circle" style="width:28px;height:28px"></div><div style="flex:1"><div class="ch-skeleton" style="width:60px;height:10px;margin-bottom:6px"></div><div class="ch-skeleton" style="width:220px;height:16px;margin-bottom:8px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:75%"></div></div></div>
+        <div class="finding" style="border-left-color:#e2e8f0"><div class="ch-skeleton ch-skeleton-circle" style="width:28px;height:28px"></div><div style="flex:1"><div class="ch-skeleton" style="width:60px;height:10px;margin-bottom:6px"></div><div class="ch-skeleton" style="width:220px;height:16px;margin-bottom:8px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:75%"></div></div></div>
+        <div class="finding" style="border-left-color:#e2e8f0"><div class="ch-skeleton ch-skeleton-circle" style="width:28px;height:28px"></div><div style="flex:1"><div class="ch-skeleton" style="width:60px;height:10px;margin-bottom:6px"></div><div class="ch-skeleton" style="width:220px;height:16px;margin-bottom:8px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:75%"></div></div></div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="/insights.js?v=5"></script>
 </body>
 </html>

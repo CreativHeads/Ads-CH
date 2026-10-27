@@ -318,10 +318,78 @@ async function writeSummary(e) {
   }
 }
 
+function skeletonInsights(acc) {
+  const accountName = esc(acc || "client");
+  return `
+    <div class="skeleton-pill"><span class="pulse-dot"></span>Analysing ${accountName}… live Meta audit in progress</div>
+    <section class="hero" aria-hidden="true">
+      <div style="flex:1">
+        <span class="ch-skeleton ch-skeleton-text" style="width:110px;height:12px;margin-bottom:8px"></span>
+        <div class="ch-skeleton" style="width:240px;height:34px;margin-bottom:8px"></div>
+        <div class="ch-skeleton ch-skeleton-text" style="width:380px;height:14px"></div>
+      </div>
+      <div class="chips">
+        <div class="ch-skeleton" style="width:130px;height:28px;border-radius:99px"></div>
+        <div class="ch-skeleton" style="width:110px;height:28px;border-radius:99px"></div>
+      </div>
+    </section>
+    <div class="kpis" aria-hidden="true">
+      <div class="kpi accent"><span class="ch-skeleton ch-skeleton-dark ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton ch-skeleton-dark" style="width:80%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:60%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:75%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:55%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:80%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:70%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:55%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:75%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:45%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:65%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:70%;height:26px"></div></div>
+      <div class="kpi"><span class="ch-skeleton ch-skeleton-text" style="width:60%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:75%;height:26px"></div></div>
+    </div>
+    <section class="card" aria-hidden="true" style="padding:22px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="ch-skeleton ch-skeleton-circle" style="width:22px;height:22px"></div>
+          <div class="ch-skeleton" style="width:160px;height:18px"></div>
+        </div>
+        <div class="ch-skeleton" style="width:90px;height:24px;border-radius:99px"></div>
+      </div>
+      <div class="ch-skeleton" style="width:92%;height:20px;margin-bottom:12px"></div>
+      <div class="ch-skeleton" style="width:65%;height:14px;margin-bottom:20px"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:20px">
+        <div style="background:#f8fafd;border:1px solid #eef2f6;border-radius:12px;padding:16px"><div class="ch-skeleton" style="width:40%;height:14px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:95%"></div><div class="ch-skeleton ch-skeleton-text" style="width:88%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div>
+        <div style="background:#f8fafd;border:1px solid #eef2f6;border-radius:12px;padding:16px"><div class="ch-skeleton" style="width:40%;height:14px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:95%"></div><div class="ch-skeleton ch-skeleton-text" style="width:88%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div>
+        <div style="background:#f8fafd;border:1px solid #eef2f6;border-radius:12px;padding:16px"><div class="ch-skeleton" style="width:40%;height:14px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:95%"></div><div class="ch-skeleton ch-skeleton-text" style="width:88%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div>
+      </div>
+      <div style="border-top:1px solid #eef2f6;padding-top:16px">
+        <div class="ch-skeleton" style="width:140px;height:14px;margin-bottom:12px"></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center"><div class="ch-skeleton ch-skeleton-circle" style="width:18px;height:18px"></div><div class="ch-skeleton" style="flex:1;height:14px"></div></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center"><div class="ch-skeleton ch-skeleton-circle" style="width:18px;height:18px"></div><div class="ch-skeleton" style="flex:1;height:14px"></div></div>
+      </div>
+    </section>
+    <section class="card" aria-hidden="true" style="padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="ch-skeleton" style="width:120px;height:18px;margin-bottom:6px"></div>
+          <div class="ch-skeleton ch-skeleton-text" style="width:180px;height:12px"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div class="ch-skeleton" style="width:88px;height:32px;border-radius:99px"></div>
+          <div class="ch-skeleton" style="width:110px;height:32px;border-radius:99px"></div>
+          <div class="ch-skeleton" style="width:96px;height:32px;border-radius:99px"></div>
+          <div class="ch-skeleton" style="width:70px;height:32px;border-radius:99px"></div>
+        </div>
+      </div>
+      <div class="findings">
+        <div class="finding" style="border-left-color:#e2e8f0"><div class="ch-skeleton ch-skeleton-circle" style="width:28px;height:28px"></div><div style="flex:1"><div class="ch-skeleton" style="width:60px;height:10px;margin-bottom:6px"></div><div class="ch-skeleton" style="width:220px;height:16px;margin-bottom:8px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:75%"></div></div></div>
+        <div class="finding" style="border-left-color:#e2e8f0"><div class="ch-skeleton ch-skeleton-circle" style="width:28px;height:28px"></div><div style="flex:1"><div class="ch-skeleton" style="width:60px;height:10px;margin-bottom:6px"></div><div class="ch-skeleton" style="width:220px;height:16px;margin-bottom:8px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:75%"></div></div></div>
+        <div class="finding" style="border-left-color:#e2e8f0"><div class="ch-skeleton ch-skeleton-circle" style="width:28px;height:28px"></div><div style="flex:1"><div class="ch-skeleton" style="width:60px;height:10px;margin-bottom:6px"></div><div class="ch-skeleton" style="width:220px;height:16px;margin-bottom:8px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:75%"></div></div></div>
+      </div>
+    </section>
+  `;
+}
+
 async function load() {
   const params = new URLSearchParams({ account: $("account").value, from: $("from").value, to: $("to").value });
   if (!embed) history.replaceState(null, "", `?${params}`);
-  $("out").innerHTML = `<div class="status"><div class="spinner"></div>Analysing ${esc($("account").value)}… the first run for a date range takes up to a minute.</div>`;
+  $("out").innerHTML = skeletonInsights($("account").value);
   try {
     const r = await fetch(`/api/insights?${params}`);
     if (r.status === 401) { location.href = "/login?next=" + encodeURIComponent(location.pathname + location.search); return; }

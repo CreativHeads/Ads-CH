@@ -92,3 +92,54 @@ body.embed .bar{position:static;background:transparent;padding:0 0 10px;justify-
 body.embed .bar>:not(form),body.embed .filters label,body.embed .presets,body.embed .filters button[type=submit]{display:none}
 body.embed #pdf{background:var(--forest);border-color:var(--forest);color:#fff}
 body.embed main{padding:0;max-width:none}
+
+/* ── Skeleton loading shimmer system ─────────────────── */
+@keyframes ch-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.ch-skeleton {
+  background: linear-gradient(90deg, #edf2f7 0%, #f7f9fc 50%, #edf2f7 100%);
+  background-size: 200% 100%;
+  animation: ch-shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.ch-skeleton.block { display: block; }
+.ch-skeleton-text { height: 12px; border-radius: 4px; margin-bottom: 6px; }
+.ch-skeleton-circle { border-radius: 50% !important; flex-shrink: 0; }
+.ch-skeleton-dark {
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.06) 100%);
+  background-size: 200% 100%;
+  animation: ch-shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 16px rgba(10,99,224,0.10);
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-size: 13px;
+  color: #0a63e0;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+.skeleton-pill .pulse-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #0a63e0;
+  animation: ch-pulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes ch-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
+}
+

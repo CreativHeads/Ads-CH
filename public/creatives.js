@@ -270,13 +270,56 @@ function fillAccounts(wanted) {
   else if (!names.includes(wanted)) $("account").value = names.includes("EDS Health care") ? "EDS Health care" : names[0] || ALL_CLIENTS;
 }
 
+function skeletonCreatives(account) {
+  const name = esc(account && account !== ALL_CLIENTS ? account : "Meta");
+  return `
+    <div class="skeleton-pill"><span class="pulse-dot"></span>Loading ${name} creatives and live data…</div>
+    <section class="title" aria-hidden="true">
+      <div class="ch-skeleton" style="width:280px;height:28px;margin-bottom:8px"></div>
+      <div class="ch-skeleton ch-skeleton-text" style="width:480px;height:14px"></div>
+    </section>
+    <div class="tiles" aria-hidden="true" style="margin-top:16px">
+      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:70%;height:24px"></div></div>
+      <div class="tile accent"><span class="ch-skeleton ch-skeleton-dark ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton ch-skeleton-dark" style="width:80%;height:24px"></div></div>
+      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:60%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:75%;height:24px"></div></div>
+      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:55%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:70%;height:24px"></div></div>
+      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:45%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:65%;height:24px"></div></div>
+      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:65%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:75%;height:24px"></div></div>
+      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:60%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:70%;height:24px"></div></div>
+      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:60%;height:24px"></div></div>
+    </div>
+    <div class="message" aria-hidden="true" style="margin:20px 0">
+      <header>
+        <div class="ch-skeleton" style="width:140px;height:16px"></div>
+        <div class="ch-skeleton" style="width:80px;height:28px;border-radius:8px;margin-left:auto"></div>
+      </header>
+      <div style="padding:16px">
+        <div class="ch-skeleton ch-skeleton-text" style="width:90%"></div>
+        <div class="ch-skeleton ch-skeleton-text" style="width:80%"></div>
+        <div class="ch-skeleton ch-skeleton-text" style="width:65%"></div>
+      </div>
+    </div>
+    <section class="campaign" aria-hidden="true">
+      <header style="margin-bottom:16px">
+        <div class="ch-skeleton" style="width:200px;height:24px;margin-bottom:6px"></div>
+        <div class="ch-skeleton ch-skeleton-text" style="width:300px;height:12px"></div>
+      </header>
+      <div class="ads">
+        <div class="ad"><div class="thumb ch-skeleton" style="flex:0 0 92px;height:116px"></div><div style="flex:1"><div class="ch-skeleton" style="width:140px;height:14px;margin-bottom:6px"></div><div class="ch-skeleton ch-skeleton-text" style="width:80px;height:11px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div></div>
+        <div class="ad"><div class="thumb ch-skeleton" style="flex:0 0 92px;height:116px"></div><div style="flex:1"><div class="ch-skeleton" style="width:140px;height:14px;margin-bottom:6px"></div><div class="ch-skeleton ch-skeleton-text" style="width:80px;height:11px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div></div>
+        <div class="ad"><div class="thumb ch-skeleton" style="flex:0 0 92px;height:116px"></div><div style="flex:1"><div class="ch-skeleton" style="width:140px;height:14px;margin-bottom:6px"></div><div class="ch-skeleton ch-skeleton-text" style="width:80px;height:11px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div></div>
+      </div>
+    </section>
+  `;
+}
+
 async function load() {
   const from = $("from").value, to = $("to").value;
   const wanted = $("account").value || new URLSearchParams(location.search).get("account");
   const win = liveWindow();
   ranged = null;
   if (!(win && from >= win.from && to <= win.to && live.accounts.some((a) => a.ads?.length))) {
-    $("report").innerHTML = `<p class="status">Loading live Meta data for these dates… this can take up to a minute.</p>`;
+    $("report").innerHTML = skeletonCreatives(wanted);
     try {
       const response = await fetch(`/api/creatives?${new URLSearchParams({ from, to })}`);
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || "request failed");
