@@ -47,11 +47,65 @@ function period(from, to) {
 
 // ---- AI summary: new saves are JSON (headline, sections, actions); older ones are markdown text ----
 function parseSummary(text) {
+  if (!text) return null;
   try {
     const j = JSON.parse(text);
     if (j && j.headline && Array.isArray(j.sections)) return j;
-  } catch { /* older plain-text summary */ }
-  return null;
+  } catch { /* parse as text/markdown */ }
+
+  const lines = String(text).trim().split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return null;
+
+  const headline = lines[0];
+  const sections = [];
+  const actions = [];
+  let currentSection = null;
+  let inActions = false;
+
+  const isHeader = (l) => {
+    if (l.length > 55 || /[.!?]$/.test(l)) return false;
+    if (/^(what to change|suggested changes|actions|recommended next steps|recommendations)/i.test(l)) return "actions";
+    if (/^(location error|location mismatch|zero-conversation|zero-chat|no ad fatigue|ad fatigue|placement|time of day|age\/gender|age and gender|audience|overlap|language|targeting)/i.test(l)) return "section";
+    if (/^[#*]{1,4}\s*(.+)$/.test(l)) return "section";
+    return false;
+  };
+
+  const getTone = (title) => {
+    const t = title.toLowerCase();
+    if (/no\s*(ad\s*)?fatigue|good|best|cost-effective|efficient/.test(t)) return "good";
+    if (/mismatch|wrong|error|zero|overlap|compete|silent|bad|waste/.test(t)) return "bad";
+    if (/fatigue|lagged|watch|warn|limited|language/.test(t)) return "warn";
+    return "info";
+  };
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    const headerType = isHeader(line);
+    if (headerType === "actions") {
+      inActions = true;
+      currentSection = null;
+      continue;
+    }
+    if (headerType === "section") {
+      inActions = false;
+      const cleanTitle = line.replace(/^[#*]+\s*|\s*[*#]+$/g, "").trim();
+      currentSection = { title: cleanTitle, tone: getTone(cleanTitle), points: [] };
+      sections.push(currentSection);
+      continue;
+    }
+    if (inActions) {
+      const match = line.match(/^(\d+[.)]|\*|-)\s*(?:[*]{2})?([^*:]+)(?:[*]{2})?[:\-]?\s*(.*)$/);
+      if (match) {
+        actions.push({ title: match[2].trim(), detail: match[3]?.trim() || "", impact: "high" });
+      } else {
+        actions.push({ title: line, detail: "", impact: "medium" });
+      }
+    } else if (currentSection) {
+      currentSection.points.push(line.replace(/^[-*•]\s+/, ""));
+    }
+  }
+
+  return { headline, verdict: "mixed", sections, actions };
 }
 function markdown(text) {
   const lines = esc(text).split(/\n/);
@@ -130,6 +184,8 @@ function render() {
   const kpis = [["Spend", money(t.spend), true], ["WA conversations", num(t.conv)], ["Cost / conversation", money(t.cpc)], ["Reach", num(t.reach)], ["Link clicks", num(t.clicks)], ["CTR", t.ctr.toFixed(2) + "%"], ["Leads", num(t.leads)], ["Ads running", num(t.ads)]];
   const order = { high: 0, medium: 1, good: 2, info: 3 };
   const findings = [...a.findings].sort((x, y) => order[x.severity] - order[y.severity]);
+  const mismatchMap = new Map((a.locationMismatches || []).map((m) => [m.adset, m]));
+
   let html = `<section class="hero"><div><div class="eyebrow">Meta ads audit</div><h2>${esc(data.account)}</h2><p>What is working, what is wasting money, and what to change. Nothing here changes anything in Meta.</p></div>
     <div class="chips"><span class="chip">${esc(period(data.from, data.to))}</span><span class="chip"><i class="dot"></i>Live Meta data</span></div></section>`;
   html += `<div class="kpis">${kpis.map(([l, v, accent]) => `<div class="kpi ${accent ? "accent" : ""}"><small>${l}</small><strong>${v}</strong></div>`).join("")}</div>`;
@@ -143,17 +199,33 @@ function render() {
     <section class="card"><div class="card-head"><h3>${ICON.clock}Time of day</h3><small>conversations by hour · hover a bar</small></div>${hourChart(a.hours)}${rows(a.dayparts, t.conv)}</section></div>`;
   html += `<div class="grid2 row-gap"><section class="card"><div class="card-head"><h3>${ICON.users}Age</h3></div>${rows(a.ages, t.conv)}</section>
     <section class="card"><div class="card-head"><h3>${ICON.users}Gender</h3></div>${rows(a.genders, t.conv)}<p class="footnote">Where the ads ran: ${a.regions.filter((r) => r.spend >= t.spend * 0.01).map((r) => `${esc(r.key)} ${Math.round((r.spend / t.spend) * 100)}%`).join(", ") || "—"}. Meta does not report conversations by town.</p></section></div>`;
-  html += `<section class="card"><div class="card-head"><h3>${ICON.chart}Every ad</h3><small>goal, button and destination decide whether an ad can start WhatsApp chats</small></div><div class="ads">${a.ads.map((x) => `<div class="ad">
-      <div class="ad-top"><div><strong>${esc(x.name)}</strong><small>${esc(x.campaign)} · ${esc(x.adset)}</small></div><span class="tag ${x.messaging ? "" : "warn"}">${x.messaging ? "WhatsApp" : esc(x.destination)}</span></div>
+  html += `<section class="card"><div class="card-head"><h3>${ICON.chart}Every ad</h3><small>goal, button and destination decide whether an ad can start WhatsApp chats</small></div><div class="ads">${a.ads.map((x) => {
+    const mis = mismatchMap.get(x.adset);
+    let tagHtml;
+    if (!x.messaging) {
+      tagHtml = `<span class="tag warn" title="Not WhatsApp destination">Profile visit</span>`;
+    } else if (mis) {
+      tagHtml = `<span class="tag" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171" title="Targeting location error">Wrong location</span>`;
+    } else {
+      tagHtml = `<span class="tag">WhatsApp</span>`;
+    }
+    return `<div class="ad">
+      <div class="ad-top"><div><strong>${esc(x.name)}</strong><small>${esc(x.campaign)} · ${esc(x.adset)}</small></div>${tagHtml}</div>
       <div class="share" title="${x.share}% of spend"><i style="width:${x.share}%"></i></div>
       <div class="mini"><div><small>Spend</small><b>${money(x.spend)}</b></div><div><small>Conv.</small><b>${num(x.conv)}</b></div><div><small>Cost / conv.</small><b>${money(x.cpc)}</b></div><div><small>Frequency</small><b>${x.frequency.toFixed(1)}×</b></div></div>
-      <div class="setup">${x.share}% of spend · ${num(x.reach)} reached · ${num(x.clicks)} clicks · ${esc(x.objective)} goal · button “${esc(x.button)}”</div></div>`).join("")}</div></section>`;
-  html += `<section class="card"><div class="card-head"><h3>${ICON.target}Targeting by ad set</h3><small>as set in Ads Manager</small></div><div class="targets">${a.targeting.map((x) => `<div class="target"><h4>${esc(x.adset)}<small>${esc(x.campaign)}</small></h4><dl>
+      <div class="setup">${x.share}% of spend · ${num(x.reach)} reached · ${num(x.clicks)} clicks · ${esc(x.objective)} goal · button “${esc(x.button)}”</div></div>`;
+  }).join("")}</div></section>`;
+  html += `<section class="card"><div class="card-head"><h3>${ICON.target}Targeting by ad set</h3><small>as set in Ads Manager</small></div><div class="targets">${a.targeting.map((x) => {
+    const mis = mismatchMap.get(x.adset);
+    return `<div class="target ${mis ? "has-mismatch" : ""}">
+      ${mis ? `<div style="background:#fef2f2;border:1px solid #f87171;color:#991b1b;border-radius:6px;padding:6px 10px;margin-bottom:10px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px">⚠️ Location mismatch: targets ${esc(mis.actual)} instead of ${esc(mis.expected)}</div>` : ""}
+      <h4>${esc(x.adset)}<small>${esc(x.campaign)}</small></h4><dl>
       <dt>Location</dt><dd>${esc(x.include.join("; "))}</dd>
       ${x.exclude.length ? `<dt>Excluded</dt><dd>${esc(x.exclude.join(", "))}</dd>` : ""}
       <dt>Ages</dt><dd>${esc(x.age)} · ${esc(x.genders)}</dd>
       <dt>App language</dt><dd>${x.locales.length ? `<span class="tag warn">Limited · code ${esc(x.locales.join(", "))}</span>` : "All languages"}</dd>
-      <dt>Interests</dt><dd>${esc(x.interests.join(", ") || "None (broad)")}</dd></dl></div>`).join("") || `<p class="footnote">No targeting details for this period.</p>`}</div></section>`;
+      <dt>Interests</dt><dd>${esc(x.interests.join(", ") || "None (broad)")}</dd></dl></div>`;
+  }).join("") || `<p class="footnote">No targeting details for this period.</p>`}</div></section>`;
   $("out").innerHTML = html;
 
   document.querySelectorAll("[data-write]").forEach((b) => b.addEventListener("click", writeSummary));

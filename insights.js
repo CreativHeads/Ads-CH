@@ -43,7 +43,7 @@ function parseTargeting(raw) {
   if (typeof t === "string") { try { t = JSON.parse(t); } catch { return null; } }
   if (!t || typeof t !== "object") return null;
   const geo = t.geo_locations || {}, ex = t.excluded_geo_locations || {};
-  const place = (p) => `${p.radius ? `${p.radius} km around ` : ""}${p.name || p.address_string || (p.latitude ? `${Number(p.latitude).toFixed(3)}, ${Number(p.longitude).toFixed(3)}` : "a pin")}`;
+  const place = (p) => `${p.radius ? `${p.radius} km around ` : ""}${p.name || p.address_string || (p.latitude ? `${Number(p.latitude).toFixed(3)}, ${Number(p.longitude).toFixed(3)}` : "a pin")}${p.region ? ` (${p.region})` : ""}`;
   const include = [...(geo.custom_locations || []), ...(geo.places || []), ...(geo.cities || [])].map(place)
     .concat((geo.regions || []).map((r) => r.name), (geo.countries || []).map((c) => c));
   const exclude = [...(ex.custom_locations || []), ...(ex.places || []), ...(ex.cities || [])].map((p) => p.name || place(p)).concat((ex.regions || []).map((r) => r.name));
@@ -108,19 +108,95 @@ export function buildAudit(raw, account, money) {
   const add = (severity, title, detail) => findings.push({ severity, title, detail });
   const m = (v) => money(v);
 
-  const notMessaging = ads.filter((a) => a.conv === 0 && !a.messaging);
+  const KNOWN_LOCS = [
+    { name: "Coimbatore", state: "Tamil Nadu", rx: /\b(coimbatore|cbe|kovai)\b/i },
+    { name: "Calicut", state: "Kerala", rx: /\b(calicut|kozhikode|clt)\b/i },
+    { name: "Kannur", state: "Kerala", rx: /\b(kannur|knr|cannanore)\b/i },
+    { name: "Kochi", state: "Kerala", rx: /\b(kochi|cochin|ernakulam|ekm|panampally|kakkanad|edapally)\b/i },
+    { name: "Kottakkal", state: "Kerala", rx: /\b(kottakkal|ktkl)\b/i },
+    { name: "Malappuram", state: "Kerala", rx: /\b(malappuram|mlp)\b/i },
+    { name: "Thrissur", state: "Kerala", rx: /\b(thrissur|trichur|tcr)\b/i },
+    { name: "Trivandrum", state: "Kerala", rx: /\b(trivandrum|thiruvananthapuram|tvm)\b/i },
+    { name: "Palakkad", state: "Kerala", rx: /\b(palakkad|palghat|pkd)\b/i },
+    { name: "Kollam", state: "Kerala", rx: /\b(kollam|quilon|klm)\b/i },
+    { name: "Alappuzha", state: "Kerala", rx: /\b(alappuzha|alleppey|alp)\b/i },
+    { name: "Wayanad", state: "Kerala", rx: /\b(wayanad|wyd)\b/i },
+    { name: "Bangalore", state: "Karnataka", rx: /\b(bangalore|bengaluru|blr)\b/i },
+    { name: "Chennai", state: "Tamil Nadu", rx: /\b(chennai|madras|maa)\b/i },
+  ];
+
+  const locationMismatches = [];
+  for (const t of targeting) {
+    const textToMatch = `${t.adset} ${t.campaign}`;
+    for (const loc of KNOWN_LOCS) {
+      if (loc.rx.test(textToMatch)) {
+        const includeStr = t.include.join(" ");
+        if (loc.rx.test(includeStr)) continue;
+
+        const otherLoc = KNOWN_LOCS.find((o) => o.name !== loc.name && o.rx.test(includeStr));
+        const hasOtherState = loc.state && /kerala|tamil nadu|karnataka/i.test(includeStr) && !includeStr.toLowerCase().includes(loc.state.toLowerCase());
+
+        if (otherLoc || hasOtherState) {
+          const actualDesc = otherLoc ? `${otherLoc.name}${otherLoc.state ? ` (${otherLoc.state})` : ""}` : t.include.slice(0, 2).join("; ");
+          locationMismatches.push({
+            adset: t.adset,
+            campaign: t.campaign,
+            spend: t.spend,
+            expected: `${loc.name} (${loc.state})`,
+            actual: actualDesc,
+            include: t.include.join("; "),
+          });
+        }
+      }
+    }
+  }
+
+  // Suggestions list
+  const suggestions = [];
+
+  for (const mItem of locationMismatches) {
+    add("high", `Targeting location mismatch: ${mItem.adset} targets ${mItem.actual} instead of ${mItem.expected}`,
+      `The ad set is named "${mItem.adset}", but its location targeting is set to ${mItem.include} instead of ${mItem.expected}. ${m(mItem.spend)} was spent showing ads to the wrong region with zero relevant local results. Fix this location in Meta Ads Manager immediately.`);
+    suggestions.push(`Fix location targeting on ${mItem.adset}: change from ${mItem.actual} to ${mItem.expected}.`);
+  }
+
+  const UNRELATED_TECH = ["JavaScript", "Python", "Software engineer", "Web development", "Software development", "Computer programming", "Java (programming language)"];
+  const isTechAccount = /software|developer|coding|tech|it\s+solutions/i.test(account);
+  if (!isTechAccount) {
+    const techTargeting = targeting.filter((t) => t.interests.some((i) => UNRELATED_TECH.includes(i)));
+    for (const t of techTargeting) {
+      const found = t.interests.filter((i) => UNRELATED_TECH.includes(i));
+      add("high", `Unrelated software developer targeting in ${t.adset}`,
+        `${t.adset} is restricted to software development interests (${found.join(", ")}). This limits your audience to software engineers and explains why conversations are low or 0. Remove these interests in Ads Manager.`);
+      suggestions.push(`Remove software/tech interest targeting from ${t.adset} (${found.join(", ")}).`);
+    }
+  }
+
+  const notMessaging = ads.filter((a) => a.conv === 0 && !a.messaging && a.spend >= 30);
   if (notMessaging.length) {
     const spend = notMessaging.reduce((s, a) => s + a.spend, 0);
     add("high", `${notMessaging.length} ad${notMessaging.length > 1 ? "s" : ""} with no conversations ${notMessaging.length > 1 ? "are" : "is"} not set up for WhatsApp chats`,
       notMessaging.map((a) => `${a.name}: ${a.objective} goal, optimising for ${a.goal.toLowerCase()}, button "${a.button}", destination ${a.destination}. ${m(a.spend)} spent, ${a.clicks} link clicks at ${m(a.costPerClick)} each.`).join("\n")
-      + `\nTogether ${m(spend)}. Fine if the aim is reach or profile visits; rebuild them as WhatsApp conversation ads if chats are the goal.`);
+      + `\nTogether ${m(spend)}. These ads direct people to Instagram profiles or external pages without a WhatsApp destination. If WhatsApp chats are the goal, rebuild them as conversation ads.`);
+    suggestions.push("Rebuild zero-conversation engagement ads as WhatsApp conversation ads if chats are the goal.");
   }
-  const silentMessaging = ads.filter((a) => a.conv === 0 && a.messaging && a.spend >= Math.max(300, totals.spend * 0.05));
-  if (silentMessaging.length) add("high", "WhatsApp ads spending without starting chats", silentMessaging.map((a) => `${a.name}: ${m(a.spend)}, ${a.clicks} clicks, 0 conversations.`).join("\n") + "\nCheck the creative, the WhatsApp number and the greeting message.");
+
+  const silentMessaging = ads.filter((a) => a.conv === 0 && a.messaging && (a.spend >= 100 || a.clicks >= 8));
+  if (silentMessaging.length) {
+    add("high", `WhatsApp ads spending without starting chats (${silentMessaging.length} ad${silentMessaging.length > 1 ? "s" : ""})`,
+      silentMessaging.map((a) => {
+        const mis = locationMismatches.find((lm) => lm.adset === a.adset);
+        return `${a.name} (${a.adset}): ${m(a.spend)}, ${a.clicks} clicks, 0 conversations.${mis ? ` Note: this ad set targets ${mis.actual} instead of ${mis.expected}.` : ""}`;
+      }).join("\n") + "\nCheck the creative, WhatsApp greeting message, and phone number connection.");
+  }
 
   const maxFreq = Math.max(0, ...ads.map((a) => a.frequency));
-  if (maxFreq >= 3) add("medium", "Some people are seeing the same ad too often", ads.filter((a) => a.frequency >= 3).map((a) => `${a.name}: ${a.frequency.toFixed(1)} times per person.`).join(" ") + " Expect cost per conversation to rise; refresh the creative or widen the audience.");
-  else if (ads.length) add("good", "No ad fatigue", `People saw each ad ${Math.min(...ads.map((a) => a.frequency)).toFixed(1)}–${maxFreq.toFixed(1)} times in the period.`);
+  if (maxFreq >= 3) {
+    add("medium", "Some people are seeing the same ad too often", ads.filter((a) => a.frequency >= 3).map((a) => `${a.name}: ${a.frequency.toFixed(1)} times per person.`).join(" ") + " Expect cost per conversation to rise; refresh the creative or widen the audience.");
+    suggestions.push("Refresh the most-shown creatives to prevent ad fatigue.");
+  } else if (ads.length) {
+    add("good", "No ad fatigue", `People saw each ad ${Math.min(...ads.map((a) => a.frequency)).toFixed(1)}–${maxFreq.toFixed(1)} times in the period.`);
+  }
 
   const top = ads[0];
   if (top && top.share >= 60 && ads.length > 1) add("info", `${top.name} carries ${top.share}% of spend`, `${m(top.spend)} of ${m(totals.spend)}, ${top.conv} conversations at ${m(top.cpc)} each. Results depend heavily on this one ad.`);
@@ -145,27 +221,28 @@ export function buildAudit(raw, account, money) {
   for (const list of overlapGroups) {
     add("medium", "Ad sets compete for the same people", `${list.map((t) => `${t.adset} (${t.campaign})`).join(", ")} have identical targeting (${list[0].include.slice(0, 2).join("; ")}, ages ${list[0].age}). When they run together they bid against each other; combine them into one ad set.`);
   }
-  const locales = targeting.filter((t) => t.locales.length);
-  if (locales.length) add("medium", "Ad sets limited by app language", `${locales.map((t) => `${t.adset} (${t.campaign}): language code ${t.locales.join(", ")}`).join("; ")}. People whose Facebook or Instagram is set to another language (often English) will not see these ads. Check this in Ads Manager.`);
-  const interestSets = targeting.filter((t) => t.interests.length);
-  if (interestSets.length) add("info", "Interest targeting to double-check", interestSets.map((t) => `${t.adset} (${t.campaign}): ${t.interests.slice(0, 8).join(", ")}${t.interests.length > 8 ? " and more" : ""}`).join("; ") + ". Make sure these match the business.");
-
-  // ---- suggestions ----
-  const suggestions = [];
   if (overlapGroups.length) suggestions.push("Run one ad set per audience instead of duplicates with identical targeting.");
+
   const bestPlacement = bestOf(placements);
   if (bestPlacement) suggestions.push(`Move budget toward ${bestPlacement.key} (${m(bestPlacement.cpc)} per conversation).`);
   const bestPart = bestOf(dayparts);
   if (bestPart) suggestions.push(`Weight spend toward ${bestPart.key} (${pct(bestPart.conv, totals.conv)}% of chats at ${m(bestPart.cpc)} each).`);
-  if (locales.length) suggestions.push("Test a copy of the main WhatsApp ad set open to all languages.");
-  if (notMessaging.length) suggestions.push("Rebuild the zero-chat ads as WhatsApp conversation ads if chats are the goal.");
-  if (maxFreq >= 3) suggestions.push("Refresh the most-shown creatives.");
+
+  const locales = targeting.filter((t) => t.locales.length);
+  if (locales.length) {
+    add("medium", "Ad sets limited by app language", `${locales.map((t) => `${t.adset} (${t.campaign}): language code ${t.locales.join(", ")}`).join("; ")}. People whose Facebook or Instagram is set to another language (often English) will not see these ads. Check this in Ads Manager.`);
+    suggestions.push("Test a copy of the main WhatsApp ad set open to all languages.");
+  }
+
+  const interestSets = targeting.filter((t) => t.interests.length);
+  if (interestSets.length) add("info", "Interest targeting to double-check", interestSets.map((t) => `${t.adset} (${t.campaign}): ${t.interests.slice(0, 8).join(", ")}${t.interests.length > 8 ? " and more" : ""}`).join("; ") + ". Make sure these match the business.");
+
   suggestions.push("Ask the client how many chats turned into orders or bookings, and record it under Lead feedback.");
 
   return {
     account, totals: { ...totals, reach, ads: ads.length },
     ads, placements, ages, genders, hours, dayparts, regions, targeting: targeting.map(({ signature, ...t }) => t),
-    findings, suggestions,
+    findings, suggestions, locationMismatches,
   };
 }
 
@@ -216,6 +293,7 @@ export function createInsights({ windsorKey, openaiKey, model, db }) {
     if (!openaiKey()) throw Object.assign(new Error("OpenAI is not connected yet."), { status: 409 });
     const facts = {
       period, totals: audit.totals, findings: audit.findings, suggestions: audit.suggestions,
+      locationMismatches: audit.locationMismatches,
       ads: audit.ads.map(({ name, campaign, adset, spend, conv, leads, clicks, frequency, objective, goal, destination, button }) => ({ name, campaign, adset, spend: Math.round(spend), conv, leads, clicks, frequency: Number(frequency.toFixed(2)), objective, goal, destination, button })),
       placements: audit.placements.slice(0, 8), dayparts: audit.dayparts, ages: audit.ages, genders: audit.genders, regions: audit.regions,
       targeting: audit.targeting.map(({ campaign, adset, age, genders, include, exclude, locales, interests }) => ({ campaign, adset, age, genders, include, exclude, locales, interests })),
@@ -231,13 +309,14 @@ export function createInsights({ windsorKey, openaiKey, model, db }) {
         messages: [
           { role: "system", content: [
             "You are a senior Meta Ads performance analyst at CreativHeads, a marketing agency in Kerala, writing an internal account review for the agency team.",
-            "Use ONLY the numbers in the supplied JSON. Never invent figures, causes or results. If something is uncertain, say it is worth checking.",
+            "Use ONLY the numbers and facts in the supplied JSON. Never invent figures or causes. If something is uncertain, say it is worth checking.",
+            "CRITICAL: If location mismatches (e.g. ad set named for one city like Coimbatore targeting another city/state like Calicut/Kerala), unrelated interests (e.g. software engineer targeting for local businesses), or zero-conversation ads are in findings, highlight them prominently as key findings and top actions in 'What to change'.",
             "Write in plain, direct English for busy marketers. Money in rupees like ₹1,234. 'Conversations' means WhatsApp chats started.",
             "Write cost per conversation as '₹58 per conversation'. Never write CPC, CPA or CPM. When a period has few conversations, say the numbers are small.",
             "Return JSON only, in this shape:",
             '{"headline":"the single most important finding, one sentence with numbers",',
             '"verdict":"good" | "mixed" | "poor",',
-            '"sections":[{"title":"2-4 words, e.g. Zero-chat ads, Ad fatigue, Placement, Time of day, Audience, Overlap, Language, Targeting","tone":"good" | "warn" | "bad" | "info","points":["1-2 short sentences with the numbers"]}],',
+            '"sections":[{"title":"2-4 words, e.g. Location error, Zero-chat ads, Ad fatigue, Placement, Time of day, Audience, Overlap, Language, Targeting","tone":"good" | "warn" | "bad" | "info","points":["1-2 short sentences with the numbers"]}],',
             '"actions":[{"title":"short imperative, under 8 words","detail":"one sentence: why, with the number","impact":"high" | "medium" | "low"}]}',
             "Use 3-6 sections and 3-5 actions, most important first. Skip topics with nothing useful. Keep the whole review under 300 words.",
             "Do not mention data vendors, APIs or AI tools. Nothing has been changed in Meta.",
