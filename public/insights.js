@@ -175,6 +175,46 @@ function hourChart(hours) {
     <div class="axis">${hours.map((h) => `<span>${h.hour % 3 === 0 ? label(h.hour) : ""}</span>`).join("")}</div></div>`;
 }
 
+const FINDING_SECTIONS = [
+  { key: "high", label: "Fix now", ico: ICON.alert },
+  { key: "medium", label: "Worth a look", ico: ICON.eye },
+  { key: "good", label: "Good news", ico: ICON.check },
+  { key: "info", label: "FYI", ico: ICON.info },
+];
+
+function renderFindingsList(allFindings, filter = "all") {
+  const targetSections = filter === "all" ? FINDING_SECTIONS : FINDING_SECTIONS.filter((s) => s.key === filter);
+  const visibleSections = targetSections.map((s) => ({
+    ...s,
+    items: allFindings.filter((f) => f.severity === s.key),
+  })).filter((s) => s.items.length > 0);
+
+  if (!visibleSections.length) {
+    return `<div class="empty" style="margin-top:10px"><p>No findings in this category.</p></div>`;
+  }
+
+  return visibleSections.map((sec) => `
+    <div class="findings-section" data-severity="${sec.key}">
+      <div class="findings-section-head ${sec.key}">
+        ${sec.ico}<span>${sec.label}</span><span class="count-pill">${sec.items.length}</span>
+      </div>
+      <div class="findings">
+        ${sec.items.map((f) => {
+          const [lab, ico] = TONE[f.severity] || TONE.info;
+          return `<div class="finding ${f.severity} ${f.detail.length > 260 ? "wide" : ""}">
+            <span class="badge">${ico}</span>
+            <div>
+              <span class="label">${lab}</span>
+              <strong>${esc(f.title)}</strong>
+              <span class="detail">${esc(f.detail)}</span>
+            </div>
+          </div>`;
+        }).join("")}
+      </div>
+    </div>
+  `).join("");
+}
+
 function render() {
   const a = data.audit, t = a.totals;
   if (!t.spend) {
@@ -190,10 +230,25 @@ function render() {
     <div class="chips"><span class="chip">${esc(period(data.from, data.to))}</span><span class="chip"><i class="dot"></i>Live Meta data</span></div></section>`;
   html += `<div class="kpis">${kpis.map(([l, v, accent]) => `<div class="kpi ${accent ? "accent" : ""}"><small>${l}</small><strong>${v}</strong></div>`).join("")}</div>`;
   html += aiCard();
-  html += `<section class="card"><div class="card-head"><h3>${ICON.alert}Findings</h3><small>${findings.length} from the numbers</small></div><div class="findings">${findings.map((f) => {
-    const [lab, ico] = TONE[f.severity] || TONE.info;
-    return `<div class="finding ${f.severity} ${f.detail.length > 260 ? "wide" : ""}"><span class="badge">${ico}</span><div><span class="label">${lab}</span><strong>${esc(f.title)}</strong><span class="detail">${esc(f.detail)}</span></div></div>`;
-  }).join("")}</div></section>`;
+  html += `<section class="card" id="findings-card">
+    <div class="card-head findings-head">
+      <div>
+        <h3>${ICON.alert}Findings</h3>
+        <small id="findings-counter">${findings.length} from the numbers</small>
+      </div>
+      <div class="findings-filter" role="tablist" aria-label="Filter findings by category">
+        <button type="button" class="filter-btn active" data-filter="all">All <span class="count">${findings.length}</span></button>
+        ${FINDING_SECTIONS.map((s) => {
+          const count = findings.filter((f) => f.severity === s.key).length;
+          if (!count) return "";
+          return `<button type="button" class="filter-btn ${s.key}" data-filter="${s.key}">${s.ico}${s.label} <span class="count">${count}</span></button>`;
+        }).join("")}
+      </div>
+    </div>
+    <div id="findings-body">
+      ${renderFindingsList(findings, "all")}
+    </div>
+  </section>`;
   html += `<section class="card"><div class="card-head"><h3>${ICON.list}Suggested changes</h3><small>for whoever manages the ad account</small></div><ol class="steps">${a.suggestions.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></section>`;
   html += `<div class="grid2 row-gap"><section class="card"><div class="card-head"><h3>${ICON.grid}Placement</h3><small>conversations and cost per conversation</small></div>${rows(a.placements, t.conv)}</section>
     <section class="card"><div class="card-head"><h3>${ICON.clock}Time of day</h3><small>conversations by hour · hover a bar</small></div>${hourChart(a.hours)}${rows(a.dayparts, t.conv)}</section></div>`;
@@ -227,6 +282,26 @@ function render() {
       <dt>Interests</dt><dd>${esc(x.interests.join(", ") || "None (broad)")}</dd></dl></div>`;
   }).join("") || `<p class="footnote">No targeting details for this period.</p>`}</div></section>`;
   $("out").innerHTML = html;
+
+  document.querySelectorAll(".findings-filter .filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".findings-filter .filter-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const filterKey = btn.dataset.filter;
+      const filteredCount = filterKey === "all" ? findings.length : findings.filter((f) => f.severity === filterKey).length;
+      const counterEl = $("findings-counter");
+      if (counterEl) {
+        const secLabel = filterKey === "all" ? "from the numbers" : (FINDING_SECTIONS.find((s) => s.key === filterKey)?.label || filterKey);
+        counterEl.textContent = filterKey === "all"
+          ? `${findings.length} from the numbers`
+          : `Showing ${filteredCount} of ${findings.length} · ${secLabel}`;
+      }
+      const bodyEl = $("findings-body");
+      if (bodyEl) {
+        bodyEl.innerHTML = renderFindingsList(findings, filterKey);
+      }
+    });
+  });
 
   document.querySelectorAll("[data-write]").forEach((b) => b.addEventListener("click", writeSummary));
   $("copy")?.addEventListener("click", async (e) => {

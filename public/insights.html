@@ -88,6 +88,35 @@
     .notice{display:flex;gap:12px;align-items:flex-start;background:var(--warn-bg);border:1px solid #efdfbd;color:#6b4f1c;border-radius:12px;padding:12px 14px;font-size:13.5px}
     .empty{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 16px;border:1px dashed #c1cee1;border-radius:12px;color:var(--ink-2)}
     /* findings */
+    .findings-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;margin-bottom:14px}
+    .findings-filter{display:inline-flex;gap:4px;padding:3px;background:#eef2f7;border-radius:10px;flex-wrap:wrap}
+    .findings-filter .filter-btn{border:0;background:transparent;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:all .15s}
+    .findings-filter .filter-btn:hover{color:var(--ink);background:rgba(255,255,255,.6)}
+    .findings-filter .filter-btn.active{background:#fff;color:var(--forest);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+    .findings-filter .filter-btn .count{font-size:11px;padding:1px 6px;border-radius:99px;background:#dfe4ed;color:var(--ink-2);font-weight:700}
+    .findings-filter .filter-btn.active .count{background:var(--lime);color:var(--forest)}
+    .findings-filter .filter-btn.high.active{color:var(--bad)}
+    .findings-filter .filter-btn.high.active .count{background:var(--bad-bg);color:var(--bad)}
+    .findings-filter .filter-btn.medium.active{color:var(--warn)}
+    .findings-filter .filter-btn.medium.active .count{background:var(--warn-bg);color:var(--warn)}
+    .findings-filter .filter-btn.good.active{color:var(--good)}
+    .findings-filter .filter-btn.good.active .count{background:var(--good-bg);color:var(--good)}
+    .findings-filter .filter-btn.info.active{color:var(--info)}
+    .findings-filter .filter-btn.info.active .count{background:var(--info-bg);color:var(--info)}
+    .findings-filter .filter-btn .ico{width:14px;height:14px}
+    .findings-section{margin-bottom:18px}
+    .findings-section:last-child{margin-bottom:0}
+    .findings-section-head{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+    .findings-section-head .ico{width:15px;height:15px}
+    .findings-section-head.high{color:var(--bad);border-bottom-color:#fbd5ce}
+    .findings-section-head.medium{color:var(--warn);border-bottom-color:#fae8c8}
+    .findings-section-head.good{color:var(--good);border-bottom-color:#c8d9ee}
+    .findings-section-head.info{color:var(--info);border-bottom-color:#d5e0e8}
+    .findings-section-head .count-pill{font-size:11px;padding:1px 7px;border-radius:99px;font-weight:700}
+    .findings-section-head.high .count-pill{background:var(--bad-bg);color:var(--bad)}
+    .findings-section-head.medium .count-pill{background:var(--warn-bg);color:var(--warn)}
+    .findings-section-head.good .count-pill{background:var(--good-bg);color:var(--good)}
+    .findings-section-head.info .count-pill{background:var(--info-bg);color:var(--info)}
     .findings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .finding{display:flex;gap:12px;padding:14px;border-radius:14px;border:1px solid var(--line);background:#fff}
     .finding .badge{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;flex:none}
@@ -197,6 +226,6 @@
     </form>
   </header>
   <main id="out" aria-live="polite"><div class="status"><div class="spinner"></div>Loading…</div></main>
-  <script type="module" src="/insights.js?v=2"></script>
+  <script type="module" src="/insights.js?v=3"></script>
 </body>
 </html>
