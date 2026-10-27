@@ -182,37 +182,25 @@ const FINDING_SECTIONS = [
   { key: "info", label: "FYI", ico: ICON.info },
 ];
 
-function renderFindingsList(allFindings, filter = "all") {
-  const targetSections = filter === "all" ? FINDING_SECTIONS : FINDING_SECTIONS.filter((s) => s.key === filter);
-  const visibleSections = targetSections.map((s) => ({
-    ...s,
-    items: allFindings.filter((f) => f.severity === s.key),
-  })).filter((s) => s.items.length > 0);
-
-  if (!visibleSections.length) {
+function renderFindingsList(allFindings, filter) {
+  const items = allFindings.filter((f) => f.severity === filter);
+  if (!items.length) {
     return `<div class="empty" style="margin-top:10px"><p>No findings in this category.</p></div>`;
   }
 
-  return visibleSections.map((sec) => `
-    <div class="findings-section" data-severity="${sec.key}">
-      <div class="findings-section-head ${sec.key}">
-        ${sec.ico}<span>${sec.label}</span><span class="count-pill">${sec.items.length}</span>
-      </div>
-      <div class="findings">
-        ${sec.items.map((f) => {
-          const [lab, ico] = TONE[f.severity] || TONE.info;
-          return `<div class="finding ${f.severity} ${f.detail.length > 260 ? "wide" : ""}">
-            <span class="badge">${ico}</span>
-            <div>
-              <span class="label">${lab}</span>
-              <strong>${esc(f.title)}</strong>
-              <span class="detail">${esc(f.detail)}</span>
-            </div>
-          </div>`;
-        }).join("")}
-      </div>
-    </div>
-  `).join("");
+  return `<div class="findings">
+    ${items.map((f) => {
+      const [lab, ico] = TONE[f.severity] || TONE.info;
+      return `<div class="finding ${f.severity} ${f.detail.length > 260 ? "wide" : ""}">
+        <span class="badge">${ico}</span>
+        <div>
+          <span class="label">${lab}</span>
+          <strong>${esc(f.title)}</strong>
+          <span class="detail">${esc(f.detail)}</span>
+        </div>
+      </div>`;
+    }).join("")}
+  </div>`;
 }
 
 function render() {
@@ -226,6 +214,11 @@ function render() {
   const findings = [...a.findings].sort((x, y) => order[x.severity] - order[y.severity]);
   const mismatchMap = new Map((a.locationMismatches || []).map((m) => [m.adset, m]));
 
+  const availableSections = FINDING_SECTIONS.filter((s) => findings.some((f) => f.severity === s.key));
+  const defaultSection = availableSections[0] || FINDING_SECTIONS[0];
+  const defaultFilter = defaultSection.key;
+  const defaultCount = findings.filter((f) => f.severity === defaultFilter).length;
+
   let html = `<section class="hero"><div><div class="eyebrow">Meta ads audit</div><h2>${esc(data.account)}</h2><p>What is working, what is wasting money, and what to change. Nothing here changes anything in Meta.</p></div>
     <div class="chips"><span class="chip">${esc(period(data.from, data.to))}</span><span class="chip"><i class="dot"></i>Live Meta data</span></div></section>`;
   html += `<div class="kpis">${kpis.map(([l, v, accent]) => `<div class="kpi ${accent ? "accent" : ""}"><small>${l}</small><strong>${v}</strong></div>`).join("")}</div>`;
@@ -234,19 +227,18 @@ function render() {
     <div class="card-head findings-head">
       <div>
         <h3>${ICON.alert}Findings</h3>
-        <small id="findings-counter">${findings.length} from the numbers</small>
+        <small id="findings-counter">${defaultCount} ${defaultSection.label.toLowerCase()} item${defaultCount !== 1 ? 's' : ''} from the numbers</small>
       </div>
       <div class="findings-filter" role="tablist" aria-label="Filter findings by category">
-        <button type="button" class="filter-btn active" data-filter="all">All <span class="count">${findings.length}</span></button>
-        ${FINDING_SECTIONS.map((s) => {
+        ${availableSections.map((s) => {
           const count = findings.filter((f) => f.severity === s.key).length;
-          if (!count) return "";
-          return `<button type="button" class="filter-btn ${s.key}" data-filter="${s.key}">${s.ico}${s.label} <span class="count">${count}</span></button>`;
+          const isActive = s.key === defaultFilter;
+          return `<button type="button" class="filter-btn ${s.key} ${isActive ? 'active' : ''}" data-filter="${s.key}">${s.ico}${s.label} <span class="count">${count}</span></button>`;
         }).join("")}
       </div>
     </div>
     <div id="findings-body">
-      ${renderFindingsList(findings, "all")}
+      ${renderFindingsList(findings, defaultFilter)}
     </div>
   </section>`;
   html += `<section class="card"><div class="card-head"><h3>${ICON.list}Suggested changes</h3><small>for whoever manages the ad account</small></div><ol class="steps">${a.suggestions.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></section>`;
@@ -288,13 +280,11 @@ function render() {
       document.querySelectorAll(".findings-filter .filter-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const filterKey = btn.dataset.filter;
-      const filteredCount = filterKey === "all" ? findings.length : findings.filter((f) => f.severity === filterKey).length;
+      const sec = FINDING_SECTIONS.find((s) => s.key === filterKey);
+      const count = findings.filter((f) => f.severity === filterKey).length;
       const counterEl = $("findings-counter");
       if (counterEl) {
-        const secLabel = filterKey === "all" ? "from the numbers" : (FINDING_SECTIONS.find((s) => s.key === filterKey)?.label || filterKey);
-        counterEl.textContent = filterKey === "all"
-          ? `${findings.length} from the numbers`
-          : `Showing ${filteredCount} of ${findings.length} · ${secLabel}`;
+        counterEl.textContent = `${count} ${sec ? sec.label.toLowerCase() : filterKey} item${count !== 1 ? 's' : ''} from the numbers`;
       }
       const bodyEl = $("findings-body");
       if (bodyEl) {
