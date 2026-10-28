@@ -625,7 +625,7 @@ const server = http.createServer((req, res) => {
     const ext = path.extname(target).toLowerCase();
     res.writeHead(200, {
       "Content-Type": types[ext] || "application/octet-stream",
-      "Cache-Control": ext === ".html" || ext === ".js" ? "no-cache" : "public, max-age=86400",
+      "Cache-Control": (ext === ".html" || ext === ".js" || ext === ".png" || ext === ".ico" || ext === ".css") ? "no-cache, must-revalidate" : "public, max-age=86400",
       "X-Content-Type-Options": "nosniff",
     });
     fs.createReadStream(target).pipe(res);
