@@ -26,6 +26,41 @@
   --teal: #60a5fa;
 }
 
+/* ── Embedded Mode (Client Page > Full Report) ── */
+html.embed, body.embed {
+  background: transparent !important;
+}
+html.embed .sidebar, body.embed .sidebar,
+html.embed .topbar, body.embed .topbar,
+html.embed .hero-banner, body.embed .hero-banner,
+html.embed .mobile-shade, body.embed .mobile-shade {
+  display: none !important;
+}
+body.embed .filter-card {
+  padding: 8px 0 !important;
+  margin-bottom: 16px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+body.embed .creatives-filters-bar {
+  justify-content: flex-end !important;
+}
+body.embed .creatives-filters-bar .field-item,
+body.embed .creatives-filters-bar .presets-wrap,
+body.embed .creatives-filters-bar button[type="submit"] {
+  display: none !important;
+}
+html.embed .main-shell, body.embed .main-shell {
+  margin-left: 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+html.embed main.content, body.embed main.content {
+  padding: 0 !important;
+  max-width: none !important;
+}
+
 /* ── Filter Card & Controls ── */
 .filter-card {
   padding: 16px 20px;
