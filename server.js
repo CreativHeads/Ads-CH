@@ -147,12 +147,14 @@ function buildLive(rows, endDate) {
     const account = byAccount.get(id);
     if (row.account_name) account.name = String(row.account_name);
     if (row.account_currency) account.currency = String(row.account_currency);
+    const leadFormCount = Number(row.actions_lead) || 0;
+    const msgConvCount = Number(row.actions_onsite_conversion_messaging_conversation_started_7d) || 0;
     account.days[date] = {
       spend: Number(row.spend) || 0,
-      leads: Number(row.actions_lead) || 0,
+      leads: leadFormCount + msgConvCount,
       clicks: Number(row.link_clicks) || 0,
       impressions: Number(row.impressions) || 0,
-      conv: Number(row.actions_onsite_conversion_messaging_conversation_started_7d) || 0,
+      conv: msgConvCount,
     };
   }
   const spendOf = (account) => Object.values(account.days).reduce((sum, day) => sum + day.spend, 0);
@@ -283,12 +285,14 @@ async function syncAds(model, cachePath, startDate, endDate) {
       ad.adsetId = String(row.adset_id || ad.adsetId);
       ad.adset = String(row.adset_name || ad.adset);
       if (/^https:\/\//.test(row.thumbnail_url || "")) ad.thumb = row.thumbnail_url;
+      const formLeads = Math.round(Number(row.actions_lead) || 0);
+      const convLeads = Math.round(Number(row.actions_onsite_conversion_messaging_conversation_started_7d) || 0);
       ad.days[date] = {
         spend: Number(row.spend) || 0,
-        leads: Math.round(Number(row.actions_lead) || 0),
+        leads: formLeads + convLeads,
         clicks: Math.round(Number(row.link_clicks) || 0),
         impressions: Math.round(Number(row.impressions) || 0),
-        conv: Math.round(Number(row.actions_onsite_conversion_messaging_conversation_started_7d) || 0),
+        conv: convLeads,
       };
     }
     for (const account of model.accounts) {
@@ -335,7 +339,7 @@ async function fetchCreatives(from, to, fresh = false) {
       spend: Number(row.spend) || 0,
       impressions: Math.round(Number(row.impressions) || 0),
       clicks: Math.round(Number(row.link_clicks) || 0),
-      leads: Math.round(Number(row.actions_lead) || 0),
+      leads: Math.round((Number(row.actions_lead) || 0) + (Number(row.actions_onsite_conversion_messaging_conversation_started_7d) || 0)),
       conv: Math.round(Number(row.actions_onsite_conversion_messaging_conversation_started_7d) || 0),
     }));
   const body = { from, to, syncedAt: new Date().toISOString(), accounts: [...new Set(ads.map((ad) => ad.account))].sort(), ads };
