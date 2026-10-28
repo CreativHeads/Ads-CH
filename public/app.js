@@ -184,17 +184,18 @@ function brand(){const isDark=document.documentElement.getAttribute('data-theme'
 function navItem(page,label,ico,count=''){const active=state.page===page||(page==='clients'&&state.clientId);return`<a href="#/${page}" class="nav-item ${active?'active':''}" ${active?'aria-current="page"':''}>${icon(ico)}<span>${label}</span>${count?`<span class="count ${page==='flags'?'attention':''}">${count}</span>`:''}</a>`}
 function sidebar(){return`<aside class="sidebar ${state.sidebar?'open':''}" aria-label="Main navigation">${brand()}<button class="workspace-select" data-action="go" data-value="portfolio"><span class="workspace-icon">${icon('grid',16)}</span><span>Pulse<small>by CreativHeads</small></span>${icon('down',12)}</button><nav style="overflow-y:auto;flex:1;min-height:0"><div class="nav-group"><div class="nav-label">WORKSPACE</div>${navItem('portfolio','Portfolio','grid')}${navItem('clients','Clients','users')}${navItem('reviews','AI reviews','spark',readyReviews().length)}<a href="/insights" class="nav-item">${icon('spark')}<span>Insights</span></a>${navItem('flags','Flags & alerts','flag',flags().length)}</div><div class="nav-group"><div class="nav-label">REPORTING</div>${navItem('reports','Client reports','send')}<a href="/creatives" class="nav-item">${icon('grid')}<span>Reports &amp; PDFs</span></a>${navItem('feedback','Lead feedback','message')}</div><div class="nav-group"><div class="nav-label">MANAGEMENT</div>${navItem('accounts','Ad accounts','account')}${navItem('settings','Settings','settings')}<a href="/team" class="nav-item">${icon('users')}<span>Team &amp; logins</span></a></div></nav></aside><div class="mobile-shade" data-action="menu" aria-hidden="true"></div>`}
 function topbar(){const titles={portfolio:'Portfolio',clients:state.clientId?clientById(state.clientId).name:'Clients',reviews:'AI reviews',flags:'Flags & alerts',reports:'Client reports',feedback:'Lead feedback',accounts:state.accountId?'Account detail':'Ad accounts',settings:'Settings'};const isDark=document.documentElement.getAttribute('data-theme')==='dark';return`<header class="topbar"><button class="icon-btn mobile-menu" data-action="menu" aria-label="Open navigation">${icon('menu')}</button><div class="breadcrumbs"><span>Workspace</span>${icon('chevron',10)}<strong>${esc(titles[state.page]||'Portfolio')}</strong></div><div class="topbar-right"><button class="global-search" data-action="search" aria-label="Search workspace">${icon('search',15)}<span>Search workspace...</span><kbd>⌘ K</kbd></button><button class="icon-btn theme-toggle" data-action="toggle-theme" aria-label="Switch theme" title="Toggle theme">${icon(isDark?'moon':'sun',16)}</button><span class="demo-label staff-gradient-pill">STAFF WORKSPACE</span><button class="icon-btn" data-action="notifications" aria-label="View notifications">${icon('bell',17)}</button><span class="topbar-avatar" title="${esc(window.__USER?.name||'MS')} · Click to sign out" onclick="if(confirm('Sign out of Pulse by CreativHeads?'))fetch('/api/auth/logout',{method:'POST'}).finally(()=>location.href='/login')">MS</span></div></header>`}
-function heading(title,desc,actions='',eyebrow='PULSE BY CREATIVHEADS · AD REPORTS & AI INSIGHTS'){
+function heading(title,desc,actions='',eyebrow=''){
   const isPortfolio=title==='Portfolio overview'||title.includes('Portfolio');
   const formattedTitle=isPortfolio?'Portfolio <span class="gradient-text">overview</span>':title;
+  const showMeta=Boolean(eyebrow && eyebrow!=='PULSE BY CREATIVHEADS · AD REPORTS & AI INSIGHTS');
   return`<div class="hero-banner">
     <div class="hero-grid-ambient" aria-hidden="true"></div>
     <div class="hero-glow-orb" aria-hidden="true"></div>
     <div class="hero-inner">
-      <div class="hero-top-meta">
+      ${showMeta?`<div class="hero-top-meta">
         <span class="live-status-pill"><span class="live-dot-pulse"></span>${eyebrow}</span>
         <span class="linear-tag">WORKSPACE · v3.4</span>
-      </div>
+      </div>`:''}
       <div class="page-heading">
         <div>
           <h1>${formattedTitle}</h1>
