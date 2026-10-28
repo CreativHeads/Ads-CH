@@ -74,7 +74,7 @@ html.embed main.content, body.embed main.content {
 .creatives-filters-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px 18px;
+  gap: 12px 14px;
   align-items: flex-end;
 }
 
@@ -92,12 +92,28 @@ html.embed main.content, body.embed main.content {
   text-transform: uppercase;
 }
 
-.select-field, .date-field {
+.select-field {
   height: 36px;
-  padding: 0 12px;
+  min-width: 140px;
+  max-width: 180px;
+  padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--paper);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.date-field {
+  height: 36px;
+  width: 130px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 12.5px;
   font-family: inherit;
   color: var(--ink);
   background: var(--paper);
@@ -133,7 +149,7 @@ html.embed main.content, body.embed main.content {
 .presets.segmented button {
   border: none;
   background: transparent;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 6px;
   font-size: 11.5px;
   font-weight: 500;
@@ -167,14 +183,71 @@ html.embed main.content, body.embed main.content {
   margin-left: auto;
 }
 
-@media (max-width: 900px) {
+.filter-actions .btn {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 16px !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.filter-actions .btn.primary {
+  background: #2563eb !important;
+  border: 1px solid #1d4ed8 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+}
+
+.filter-actions .btn.primary:hover {
+  background: #1d4ed8 !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
+}
+
+.filter-actions .btn-export-gradient {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3) !important;
+}
+
+.filter-actions .btn-export-gradient:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45) !important;
+}
+
+@media (max-width: 980px) {
+  .creatives-filters-bar {
+    gap: 10px 12px;
+  }
+}
+
+@media (max-width: 860px) {
+  .filter-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 600px) {
   .creatives-filters-bar {
     flex-direction: column;
     align-items: stretch;
   }
   .filter-actions {
-    margin-left: 0;
-    margin-top: 8px;
+    flex-direction: column;
+  }
+  .filter-actions .btn {
+    width: 100%;
   }
 }
 
