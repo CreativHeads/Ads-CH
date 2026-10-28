@@ -4,11 +4,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Brand accents */
-  --brand: #2563eb;
-  --brand-strong: #1d4ed8;
-  --brand-deep: #1e40af;
-  --brand-glow: rgba(37, 99, 235, 0.18);
+  /* Brand accents — Matched to Pulse by CreativHeads Logo */
+  --brand: #0066fe;
+  --brand-strong: #0058e0;
+  --brand-deep: #004ac7;
+  --brand-glow: rgba(0, 102, 254, 0.25);
   --navy: #0b1f44;
 
   /* Light Theme Surfaces */
@@ -40,19 +40,19 @@
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 6px 18px -3px rgba(15, 23, 42, 0.04);
-  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 10px 24px -5px rgba(37, 99, 235, 0.05);
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 10px 24px -5px rgba(0, 102, 254, 0.08);
   --shadow-lg: 0 14px 30px -4px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.02);
-  --shadow-hover: 0 14px 30px -4px rgba(37, 99, 235, 0.14), 0 4px 8px -2px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 14px 30px -4px rgba(0, 102, 254, 0.22), 0 4px 8px -2px rgba(0, 0, 0, 0.03);
 
   --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* ── Dark Theme Variables ───────────────────────────── */
 [data-theme="dark"] {
-  --brand: #3b82f6;
-  --brand-strong: #60a5fa;
-  --brand-deep: #2563eb;
-  --brand-glow: rgba(59, 130, 246, 0.28);
+  --brand: #389ffe;
+  --brand-strong: #60b4ff;
+  --brand-deep: #0066fe;
+  --brand-glow: rgba(0, 102, 254, 0.35);
   --navy: #060b14;
 
   --canvas: #090d16;
@@ -163,7 +163,7 @@ h3 { font-size: 14px; }
 .workspace-icon {
   background: var(--tint);
   color: var(--brand);
-  border: 1px solid rgba(37, 99, 235, 0.18);
+  border: 1px solid rgba(0, 102, 254, 0.18);
   border-radius: 8px;
 }
 
@@ -329,7 +329,7 @@ h3 { font-size: 14px; }
   letter-spacing: 0.06em;
   color: var(--brand);
   background: var(--tint);
-  border: 1px solid rgba(37, 99, 235, 0.25);
+  border: 1px solid rgba(0, 102, 254, 0.25);
   padding: 4px 10px;
   border-radius: 99px;
 }
@@ -531,7 +531,7 @@ h3 { font-size: 14px; }
 .metric:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
-  border-color: rgba(37, 99, 235, 0.3);
+  border-color: rgba(0, 102, 254, 0.3);
 }
 
 .metric-top {
@@ -722,7 +722,7 @@ h3 { font-size: 14px; }
 
 /* ── AI Spotlight Panel ─────────────────────────────── */
 .ai-spotlight {
-  background: linear-gradient(150deg, #0b1f44 0%, #0d2a60 55%, #1d4ed8 120%) !important;
+  background: linear-gradient(150deg, #0b1f44 0%, #0d2a60 55%, #0058e0 120%) !important;
   color: #fff !important;
   border: 0;
   border-radius: 16px;
@@ -917,7 +917,7 @@ h3 { font-size: 14px; }
   font-weight: 600;
   color: var(--brand);
   background: var(--tint);
-  border: 1px solid rgba(37, 99, 235, 0.2);
+  border: 1px solid rgba(0, 102, 254, 0.2);
   padding: 2px 8px;
   border-radius: 99px;
 }
@@ -990,7 +990,7 @@ tbody tr.clickable:hover td {
 }
 
 .progress-fill {
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  background: linear-gradient(90deg, #389ffe, #0066fe);
   border-radius: 99px;
 }
 
@@ -1181,7 +1181,7 @@ tbody tr.clickable:hover td {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #2563eb;
+  color: #0066fe;
   background: #eff6ff;
   border: 1px solid #bfdbfe;
   border-radius: 99px;
@@ -1189,9 +1189,9 @@ tbody tr.clickable:hover td {
 }
 
 [data-theme="dark"] .live-status-pill {
-  background: rgba(37, 99, 235, 0.15);
-  border-color: rgba(59, 130, 246, 0.3);
-  color: #60a5fa;
+  background: rgba(0, 102, 254, 0.15);
+  border-color: rgba(56, 159, 254, 0.3);
+  color: #389ffe;
 }
 
 .live-dot-pulse {
@@ -1232,7 +1232,7 @@ tbody tr.clickable:hover td {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #2563eb 0%, #0099ff 100%);
+  background: linear-gradient(135deg, #0066fe 0%, #389ffe 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -1248,14 +1248,14 @@ tbody tr.clickable:hover td {
 }
 
 .btn-export-gradient {
-  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+  background: linear-gradient(135deg, #389ffe 0%, #0066fe 100%) !important;
   color: #ffffff !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 99px !important;
   padding: 9px 20px !important;
   font-size: 12.5px !important;
   font-weight: 600 !important;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(0, 102, 254, 0.35) !important;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -1265,7 +1265,7 @@ tbody tr.clickable:hover td {
 
 .btn-export-gradient:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5) !important;
+  box-shadow: 0 6px 20px rgba(0, 102, 254, 0.5) !important;
 }
 
 /* 2. Sidebar Navigation */
@@ -1332,10 +1332,10 @@ tbody tr.clickable:hover td {
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+  background: linear-gradient(135deg, #389ffe 0%, #0066fe 100%) !important;
   color: #ffffff !important;
   font-weight: 600 !important;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(0, 102, 254, 0.35) !important;
   border-radius: 10px !important;
 }
 
@@ -1358,7 +1358,7 @@ tbody tr.clickable:hover td {
   border-radius: 99px;
   padding: 2px 8px;
   background: #eff6ff;
-  color: #2563eb;
+  color: #0066fe;
   border: 1px solid #dbeafe;
 }
 
@@ -1388,19 +1388,19 @@ tbody tr.clickable:hover td {
 
 .upgrade-card:hover {
   transform: translateY(-1px);
-  border-color: #93c5fd;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
+  border-color: #389ffe;
+  box-shadow: 0 4px 14px rgba(0, 102, 254, 0.15);
 }
 
 .upgrade-icon {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #389ffe 0%, #0066fe 100%);
   display: grid;
   place-items: center;
   font-size: 15px;
-  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 102, 254, 0.3);
   flex-shrink: 0;
 }
 
@@ -1434,7 +1434,7 @@ tbody tr.clickable:hover td {
 }
 
 .upgrade-arrow {
-  color: #6366f1;
+  color: #0066fe;
   display: grid;
   place-items: center;
 }
@@ -1466,12 +1466,12 @@ tbody tr.clickable:hover td {
 }
 
 .global-search:hover {
-  border-color: #93c5fd !important;
+  border-color: #389ffe !important;
   background: #ffffff !important;
 }
 
 .staff-gradient-pill {
-  background: #2563eb !important;
+  background: linear-gradient(135deg, #389ffe 0%, #0066fe 100%) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
   font-size: 11px !important;
@@ -1479,20 +1479,20 @@ tbody tr.clickable:hover td {
   padding: 6px 14px !important;
   border-radius: 99px !important;
   border: none !important;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 102, 254, 0.35) !important;
 }
 
 .topbar-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #4f46e5;
+  background: linear-gradient(135deg, #389ffe 0%, #0066fe 100%);
   color: #ffffff;
   font-weight: 700;
   font-size: 11.5px;
   display: grid;
   place-items: center;
-  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 102, 254, 0.3);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -1555,7 +1555,7 @@ tbody tr.clickable:hover td {
 }
 
 [data-theme="dark"] .segmented button.active {
-  background: #2563eb !important;
+  background: #0066fe !important;
 }
 
 /* 5. Six Metric Bento Cards */
@@ -1594,12 +1594,12 @@ tbody tr.clickable:hover td {
 
 .metric:hover {
   transform: translateY(-2px);
-  border-color: #93c5fd;
-  box-shadow: 0 6px 20px -4px rgba(37, 99, 235, 0.12), inset 0 1px 0 #ffffff;
+  border-color: #389ffe;
+  box-shadow: 0 6px 20px -4px rgba(0, 102, 254, 0.15), inset 0 1px 0 #ffffff;
 }
 
 [data-theme="dark"] .metric:hover {
-  border-color: rgba(59, 130, 246, 0.4);
+  border-color: rgba(56, 159, 254, 0.4);
   box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7);
 }
 
@@ -1629,14 +1629,14 @@ tbody tr.clickable:hover td {
   flex-shrink: 0;
 }
 
-.metric-badge.blue { background: rgba(37, 99, 235, 0.08); color: #2563eb; }
+.metric-badge.blue { background: rgba(0, 102, 254, 0.08); color: #0066fe; }
 .metric-badge.green { background: rgba(16, 185, 129, 0.08); color: #059669; }
 .metric-badge.purple { background: rgba(147, 51, 234, 0.08); color: #7c3aed; }
 .metric-badge.orange { background: rgba(249, 115, 22, 0.08); color: #ea580c; }
 .metric-badge.emerald { background: rgba(16, 185, 129, 0.08); color: #059669; }
 .metric-badge.pink { background: rgba(236, 72, 153, 0.08); color: #db2777; }
 
-[data-theme="dark"] .metric-badge.blue { background: rgba(37, 99, 235, 0.2); color: #60a5fa; }
+[data-theme="dark"] .metric-badge.blue { background: rgba(0, 102, 254, 0.2); color: #389ffe; }
 [data-theme="dark"] .metric-badge.green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 [data-theme="dark"] .metric-badge.purple { background: rgba(147, 51, 234, 0.2); color: #c084fc; }
 [data-theme="dark"] .metric-badge.orange { background: rgba(249, 115, 22, 0.2); color: #fb923c; }
@@ -1790,8 +1790,8 @@ tbody tr.clickable:hover td {
 }
 
 [data-theme="dark"] .wf-card.wf-blue {
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.12) 0%, rgba(99, 102, 241, 0.12) 100%);
-  border-color: rgba(99, 102, 241, 0.28);
+  background: linear-gradient(180deg, rgba(0, 102, 254, 0.12) 0%, rgba(56, 159, 254, 0.12) 100%);
+  border-color: rgba(56, 159, 254, 0.28);
 }
 
 [data-theme="dark"] .wf-card.wf-purple {
@@ -1805,7 +1805,7 @@ tbody tr.clickable:hover td {
 }
 
 .wf-card.wf-blue .wf-icon-badge {
-  background: #2563eb;
+  background: #0066fe;
   color: #ffffff;
 }
 

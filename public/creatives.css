@@ -4,13 +4,13 @@
   --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.05);
   --ink: #0f172a;
   --muted: #64748b;
-  --green: #2563eb;
+  --green: #0066fe;
   --forest: #0b1f44;
   --lime: #eff6ff;
   --line: #e2e8f0;
   --canvas: #f8fafc;
   --paper: #ffffff;
-  --teal: #2563eb;
+  --teal: #0066fe;
 }
 
 [data-theme="dark"] {
@@ -122,8 +122,8 @@ html.embed main.content, body.embed main.content {
 }
 
 .select-field:focus, .date-field:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: #0066fe;
+  box-shadow: 0 0 0 3px rgba(0, 102, 254, 0.15);
 }
 
 [data-theme="dark"] .select-field, [data-theme="dark"] .date-field {
@@ -200,27 +200,27 @@ html.embed main.content, body.embed main.content {
 }
 
 .filter-actions .btn.primary {
-  background: #2563eb !important;
-  border: 1px solid #1d4ed8 !important;
+  background: #0066fe !important;
+  border: 1px solid #0058e0 !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+  box-shadow: 0 2px 6px rgba(0, 102, 254, 0.25) !important;
 }
 
 .filter-actions .btn.primary:hover {
-  background: #1d4ed8 !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
+  background: #0058e0 !important;
+  box-shadow: 0 4px 12px rgba(0, 102, 254, 0.35) !important;
 }
 
 .filter-actions .btn-export-gradient {
-  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+  background: linear-gradient(135deg, #389ffe 0%, #0066fe 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 102, 254, 0.3) !important;
 }
 
 .filter-actions .btn-export-gradient:hover {
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(0, 102, 254, 0.45) !important;
 }
 
 @media (max-width: 980px) {
@@ -295,20 +295,20 @@ html.embed main.content, body.embed main.content {
 .tile.accent {
   background: #eff6ff !important;
   border: 1px solid #93c5fd !important;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08) !important;
+  box-shadow: 0 2px 8px rgba(0, 102, 254, 0.08) !important;
 }
 
 .tile.accent small {
-  color: #2563eb !important;
+  color: #0066fe !important;
 }
 
 .tile.accent strong {
-  color: #1d4ed8 !important;
+  color: #0058e0 !important;
 }
 
 [data-theme="dark"] .tile.accent {
-  background: rgba(37, 99, 235, 0.15) !important;
-  border-color: rgba(59, 130, 246, 0.4) !important;
+  background: rgba(0, 102, 254, 0.15) !important;
+  border-color: rgba(56, 159, 254, 0.4) !important;
 }
 
 [data-theme="dark"] .tile.accent small {
@@ -382,7 +382,7 @@ h3 {
 
 .message .copy {
   margin-left: auto;
-  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #389ffe 0%, #0066fe 100%);
   border: none;
   color: #fff;
   font-weight: 600;
@@ -390,7 +390,7 @@ h3 {
   min-height: 30px;
   padding: 5px 14px;
   border-radius: 7px;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 102, 254, 0.25);
   cursor: pointer;
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
@@ -507,12 +507,12 @@ tr.link:hover td {
 .loc h4 {
   margin: 22px 0 12px;
   font-size: 14px;
-  color: #2563eb;
+  color: #0066fe;
   font-weight: 700;
 }
 
 [data-theme="dark"] .loc h4 {
-  color: #60a5fa;
+  color: #389ffe;
 }
 
 .loc h4 span {
@@ -634,11 +634,11 @@ tr.link:hover td {
   gap: 9px;
   background: var(--paper);
   border: 1px solid var(--line);
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 102, 254, 0.08);
   padding: 8px 16px;
   border-radius: 99px;
   font-size: 13px;
-  color: #2563eb;
+  color: #0066fe;
   font-weight: 600;
   margin-bottom: 20px;
 }
@@ -647,7 +647,7 @@ tr.link:hover td {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #2563eb;
+  background: #0066fe;
   animation: ch-pulse 1.4s ease-in-out infinite;
   flex-shrink: 0;
 }

@@ -208,13 +208,13 @@ function filters(showClient=true,showPlatform=true){
 
 function sparklineSvg(series=[],color='blue'){
   const colors = {
-    blue: { stroke: '#2563eb', fill: '#3b82f6' },
+    blue: { stroke: '#0066fe', fill: '#389ffe' },
     green: { stroke: '#059669', fill: '#10b981' },
     purple: { stroke: '#7c3aed', fill: '#8b5cf6' },
     orange: { stroke: '#ea580c', fill: '#f97316' },
     emerald: { stroke: '#059669', fill: '#10b981' },
     pink: { stroke: '#db2777', fill: '#ec4899' }
-  }[color] || { stroke: '#2563eb', fill: '#3b82f6' };
+  }[color] || { stroke: '#0066fe', fill: '#389ffe' };
 
   const W = 58, H = 22;
   const vals = (Array.isArray(series) && series.length >= 2) ? series : [10, 14, 12, 18, 15, 17, 16];
