@@ -187,15 +187,15 @@ function topbar(){const titles={portfolio:'Portfolio',clients:state.clientId?cli
 function heading(title,desc,actions='',eyebrow=''){
   const isPortfolio=title==='Portfolio overview'||title.includes('Portfolio');
   const formattedTitle=isPortfolio?'Portfolio <span class="gradient-text">overview</span>':title;
-  const showMeta=Boolean(eyebrow && eyebrow!=='PULSE BY CREATIVHEADS · AD REPORTS & AI INSIGHTS');
+  const showPill=Boolean(eyebrow && eyebrow!=='PULSE BY CREATIVHEADS · AD REPORTS & AI INSIGHTS');
   return`<div class="hero-banner">
     <div class="hero-grid-ambient" aria-hidden="true"></div>
     <div class="hero-glow-orb" aria-hidden="true"></div>
     <div class="hero-inner">
-      ${showMeta?`<div class="hero-top-meta">
-        <span class="live-status-pill"><span class="live-dot-pulse"></span>${eyebrow}</span>
+      <div class="hero-top-meta">
+        ${showPill?`<span class="live-status-pill"><span class="live-dot-pulse"></span>${eyebrow}</span>`:''}
         <span class="linear-tag">WORKSPACE · v3.4</span>
-      </div>`:''}
+      </div>
       <div class="page-heading">
         <div>
           <h1>${formattedTitle}</h1>
