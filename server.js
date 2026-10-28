@@ -127,6 +127,7 @@ const types = {
   ".jpeg": "image/jpeg",
   ".jpg": "image/jpeg",
   ".png": "image/png",
+  ".ico": "image/x-icon",
   ".svg": "image/svg+xml",
   ".json": "application/json; charset=utf-8",
   ".pdf": "application/pdf",
@@ -604,8 +605,8 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Every page needs a login, except the login page itself and its fonts/logo.
-  const open = PUBLIC_PAGES.has(url.pathname) || /^\/assets\/(hanken-[a-z]+\.ttf|creativheads-logo\.png|Pulse_Logo.*\.png)$/i.test(url.pathname);
+  // Every page needs a login, except the login page itself and its fonts/logo/favicon.
+  const open = PUBLIC_PAGES.has(url.pathname) || /^\/(favicon\.(ico|png)|assets\/(hanken-[a-z]+\.ttf|creativheads-logo\.png|Pulse.*\.png))$/i.test(decodeURIComponent(url.pathname));
   if (!open && !(auth && auth.currentUser(req))) {
     const next = url.pathname === "/" ? "" : `?next=${encodeURIComponent(url.pathname + url.search)}`;
     res.writeHead(302, { Location: `/login${next}`, "Cache-Control": "no-store" });
