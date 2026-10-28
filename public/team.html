@@ -3,226 +3,270 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f2444" />
+  <meta name="theme-color" content="#0b1f44" />
   <meta name="robots" content="noindex" />
-  <title>Team &amp; logins · CreativHeads</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230a63e0'/%3E%3Cpath d='M18 45V30h7v15m7 0V20h7v25m7 0V12h7v33' fill='%23ffffff'/%3E%3C/svg%3E" />
+  <title>Team &amp; logins · Pulse by CreativHeads</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2360a5fa'/%3E%3Cstop offset='100%25' stop-color='%232563eb'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='url(%23g)'/%3E%3Cpath d='M12 32h9l4-11 7 22 6-16 4 5h10' fill='none' stroke='%23ffffff' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>(function(){try{var t=localStorage.getItem('ch_theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+  <link rel="stylesheet" href="/styles.css?v=brand2" />
+  <link rel="stylesheet" href="/v3.css?v=brand2" />
+  <link rel="stylesheet" href="/brand.css?v=9" />
   <style>
     @font-face{font-family:Hanken;src:url('/assets/hanken-regular.ttf') format('truetype');font-weight:400;font-display:swap}
     @font-face{font-family:Hanken;src:url('/assets/hanken-semibold.ttf') format('truetype');font-weight:600 900;font-display:swap}
-    :root{--ink:#101828;--muted:#667085;--forest:#0b1f44;--lime:#e8f1ff;--line:#e4e8ef;--canvas:#f6f8fb;--red:#b25242;--amber:#9a702e;--blue:#0a63e0;--blue-soft:#e8f1ff;--green:#16794a;--green-soft:#e6f4ed}
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{margin:0;background:var(--canvas);color:var(--ink);font:14px/1.5 Hanken,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+    :root{--ink:#0f172a;--muted:#64748b;--forest:#0b1f44;--lime:#eff6ff;--line:#e2e8f0;--canvas:#f8fafc;--red:#e11d48;--amber:#d97706;--blue:#2563eb;--blue-soft:#eff6ff;--green:#059669;--green-soft:#ecfdf5}
+    [data-theme="dark"]{--ink:#f8fafc;--muted:#94a3b8;--forest:#f8fafc;--lime:rgba(59,130,246,0.18);--line:rgba(255,255,255,0.08);--canvas:#090d16;--red:#fb7185;--amber:#fbbf24;--blue:#3b82f6;--blue-soft:rgba(59,130,246,0.15);--green:#34d399;--green-soft:rgba(16,185,129,0.15)}
 
-    /* ── Header bar ─────────────────────────── */
-    .bar{background:linear-gradient(135deg,#0b1f44 0%,#142e5c 100%);color:#fff;padding:14px 28px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;box-shadow:0 2px 12px rgba(11,31,68,.18)}
-    .bar h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-.2px}
-    .bar a{color:var(--lime);text-decoration:none;font-size:13px;transition:opacity .2s}
-    .bar a:hover{opacity:.8}
-    .bar .who{margin-left:auto;font-size:13px;color:#b3c0d6}
-    .bar button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#fff;backdrop-filter:blur(4px);transition:background .2s}
-    .bar button:hover{background:rgba(255,255,255,.16)}
+    /* Cards & layout */
+    .team-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.03); transition:border-color .15s ease; }
+    [data-theme="dark"] .team-card { background:#0f172a; border-color:rgba(255,255,255,0.08); }
+    .team-card h2 { margin:0 0 4px; font-size:16px; color:var(--forest); font-weight:700; letter-spacing:-.15px; }
+    p.sub { margin:0 0 16px; color:var(--muted); font-size:13px; }
 
-    /* ── Main layout ────────────────────────── */
-    main{max-width:1060px;margin:0 auto;padding:28px 20px 60px}
-    section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:box-shadow .2s}
-    section:hover{box-shadow:0 2px 12px rgba(0,0,0,.07)}
-    h2{margin:0 0 4px;font-size:17px;color:var(--forest);font-weight:700;letter-spacing:-.15px}
-    p.sub{margin:0 0 16px;color:var(--muted);font-size:13px}
+    /* Form grid */
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 18px; align-items:end; }
+    label { display:flex; flex-direction:column; gap:6px; font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.3px; }
+    input, select { font:inherit; font-weight:400; padding:9px 12px; border:1px solid #e2e8f0; border-radius:8px; background:#fff; min-height:40px; color:inherit; outline:none; transition:border-color .2s,box-shadow .2s; }
+    [data-theme="dark"] input, [data-theme="dark"] select { background:#111a2e; color:#f8fafc; border-color:rgba(255,255,255,0.12); }
+    input:focus, select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(37,99,235,.12); }
 
-    /* ── Form grid ──────────────────────────── */
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px 16px;align-items:end}
-    label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--forest)}
-    input,select{font:inherit;font-weight:400;padding:9px 12px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;min-height:40px;transition:border-color .2s,box-shadow .2s;color:var(--ink)}
-    input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(10,99,224,.12)}
+    /* Buttons */
+    button { font:inherit; font-size:13px; font-weight:600; cursor:pointer; border-radius:8px; border:1px solid var(--blue); background:var(--blue); color:#fff; padding:8px 16px; min-height:40px; transition:all .2s ease; }
+    button:hover { background:#1d4ed8; border-color:#1d4ed8; }
+    button.ghost { background:#fff; color:var(--ink); border-color:#e2e8f0; }
+    [data-theme="dark"] button.ghost { background:#111a2e; color:#f8fafc; border-color:rgba(255,255,255,0.12); }
+    button.ghost:hover { background:#f8fafc; border-color:#cbd5e1; }
+    [data-theme="dark"] button.ghost:hover { background:#1e293b; }
+    button.danger { background:transparent; color:var(--red); border-color:rgba(225,29,72,0.3); }
+    button.danger:hover { background:rgba(225,29,72,0.08); border-color:var(--red); }
+    button:disabled { opacity:.45; cursor:default; }
 
-    /* ── Buttons ─────────────────────────────── */
-    button{font:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:10px;border:1px solid var(--blue);background:var(--blue);color:#fff;padding:8px 16px;min-height:40px;transition:all .2s ease;position:relative;overflow:hidden}
-    button:hover{background:#0852b8;border-color:#0852b8;transform:translateY(-1px);box-shadow:0 2px 8px rgba(10,99,224,.25)}
-    button:active{transform:translateY(0);box-shadow:none}
-    button.ghost{background:#fff;color:var(--forest);border-color:#d0d5dd}
-    button.ghost:hover{background:#f5f7fa;border-color:#b0b8c4;box-shadow:0 2px 6px rgba(0,0,0,.06)}
-    button.danger{background:#fff;color:var(--red);border-color:#e3bdb5}
-    button.danger:hover{background:#fef3f0;border-color:var(--red);box-shadow:0 2px 6px rgba(178,82,66,.12)}
-    button:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
+    /* Table */
+    .scroll { overflow-x:auto; border-radius:10px; border:1px solid #e2e8f0; }
+    [data-theme="dark"] .scroll { border-color:rgba(255,255,255,0.08); }
+    table { width:100%; border-collapse:collapse; min-width:780px; table-layout:fixed; }
+    colgroup .col-name { width:18%; }
+    colgroup .col-role { width:16%; }
+    colgroup .col-access { width:18%; }
+    colgroup .col-status { width:10%; }
+    colgroup .col-login { width:16%; }
+    colgroup .col-actions { width:22%; }
+    th { text-align:left; font-size:11px; color:var(--muted); font-weight:700; padding:12px 14px; border-bottom:1px solid #e2e8f0; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; background:#f8fafc; }
+    [data-theme="dark"] th { background:#111a2e; border-bottom-color:rgba(255,255,255,0.08); }
+    td { padding:14px; border-bottom:1px solid #e2e8f0; vertical-align:middle; font-size:13px; }
+    [data-theme="dark"] td { border-bottom-color:rgba(255,255,255,0.08); }
+    td small { display:block; color:var(--muted); font-size:12px; margin-top:2px; }
+    tbody tr:hover { background:#f8fafc; }
+    [data-theme="dark"] tbody tr:hover { background:rgba(255,255,255,0.02); }
+    tbody tr:last-child td { border-bottom:none; }
 
-    /* ── Table ────────────────────────────────── */
-    .scroll{overflow-x:auto;border-radius:12px}
-    table{width:100%;border-collapse:collapse;min-width:780px;table-layout:fixed}
-    colgroup .col-name{width:16%}
-    colgroup .col-role{width:17%}
-    colgroup .col-access{width:18%}
-    colgroup .col-status{width:9%}
-    colgroup .col-login{width:17%}
-    colgroup .col-actions{width:23%}
-    th{text-align:left;font-size:11.5px;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:2px solid var(--line);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
-    td{padding:14px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
-    td small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
-    tr{transition:background .15s}
-    tbody tr:hover{background:#f8fafd}
-    tbody tr:last-child td{border-bottom:none}
+    /* Status badge */
+    .badge { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; padding:3px 9px; border-radius:99px; font-weight:600; }
+    .badge::before { content:''; width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .badge:not(.off) { background:var(--green-soft); color:var(--green); }
+    .badge:not(.off)::before { background:var(--green); }
+    .badge.off { background:rgba(225,29,72,0.12); color:var(--red); }
+    .badge.off::before { background:var(--red); }
 
-    /* ── Status badge ────────────────────────── */
-    .badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:4px 10px;border-radius:99px;font-weight:600;letter-spacing:.2px}
-    .badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
-    .badge:not(.off){background:var(--green-soft);color:var(--green)}
-    .badge:not(.off)::before{background:var(--green)}
-    .badge.off{background:#f6ece9;color:var(--red)}
-    .badge.off::before{background:var(--red)}
+    /* Action buttons area */
+    .actions { display:flex; gap:6px; flex-wrap:wrap; }
+    .actions button { padding:5px 10px; min-height:32px; font-size:12px; }
 
-    /* ── Action buttons area ─────────────────── */
-    .actions{display:flex;gap:6px;flex-wrap:wrap}
-    .actions button{padding:6px 12px;min-height:34px;font-size:12.5px}
+    /* Messages */
+    .msg { display:none; margin-top:14px; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:500; }
+    .msg.ok { display:block; background:var(--blue-soft); color:#1d4ed8; border:1px solid #bfdbfe; }
+    [data-theme="dark"] .msg.ok { background:rgba(37,99,235,0.15); color:#60a5fa; border-color:rgba(59,130,246,0.3); }
+    .msg.err { display:block; background:#fff1f2; color:var(--red); border:1px solid #fecdd3; }
+    [data-theme="dark"] .msg.err { background:rgba(225,29,72,0.15); color:#fb7185; border-color:rgba(244,63,94,0.3); }
 
-    /* ── Messages ─────────────────────────────── */
-    .msg{display:none;margin-top:14px;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:500;animation:slideMsg .3s ease}
-    .msg.ok{display:block;background:var(--blue-soft);color:#1f3b64;border:1px solid #c8d8f0}
-    .msg.err{display:block;background:#fbefec;color:var(--red);border:1px solid #f0d4ce}
-    @keyframes slideMsg{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+    /* Misc */
+    .roles { margin:0; padding-left:18px; color:var(--muted); font-size:12.5px; line-height:1.7; }
+    .access { background:#fff; color:var(--forest); border:1px solid #e2e8f0; font-weight:600; text-align:left; width:100%; max-width:220px; }
+    [data-theme="dark"] .access { background:#111a2e; border-color:rgba(255,255,255,0.12); color:#f8fafc; }
 
-    /* ── Misc ──────────────────────────────────── */
-    .roles{margin:0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.7}
-    .access{background:#fff;color:var(--forest);border:1px solid #d0d5dd;font-weight:600;text-align:left;width:100%;max-width:220px}
+    /* Dialog */
+    dialog { border:0; border-radius:14px; padding:0; width:min(440px,calc(100vw - 24px)); box-shadow:0 24px 64px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.05); background:#fff; color:inherit; }
+    [data-theme="dark"] dialog { background:#0f172a; border:1px solid rgba(255,255,255,0.1); }
+    dialog::backdrop { background:rgba(11,20,40,.6); backdrop-filter:blur(3px); }
+    .dlg { padding:24px; }
+    .dlg h3 { margin:0 0 4px; font-size:16px; font-weight:700; color:var(--forest); }
+    .dlg .opts { display:grid; gap:8px; margin:14px 0; }
+    .dlg .opt { flex-direction:row; gap:10px; align-items:flex-start; padding:12px 14px; border:1px solid #e2e8f0; border-radius:10px; cursor:pointer; font-weight:400; }
+    [data-theme="dark"] .dlg .opt { border-color:rgba(255,255,255,0.1); }
+    .dlg .opt:hover { border-color:#94a3b8; }
+    .dlg .opt input { margin-top:3px; min-height:0; }
+    .dlg .list { max-height:min(320px,45vh); overflow:auto; border:1px solid #e2e8f0; border-radius:10px; padding:6px; }
+    [data-theme="dark"] .dlg .list { border-color:rgba(255,255,255,0.1); }
+    .dlg .list label { flex-direction:row; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; font-weight:400; font-size:13px; cursor:pointer; }
+    .dlg .list label:hover { background:#f1f5f9; }
+    [data-theme="dark"] .dlg .list label:hover { background:#1e293b; }
+    .dlg .list input { min-height:0; }
+    .dlg .row { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+    .dlg input[type=search] { width:100%; margin-bottom:8px; }
+    [hidden] { display:none!important; }
 
-    /* ── Dialog ────────────────────────────────── */
-    dialog{border:0;border-radius:18px;padding:0;width:min(440px,calc(100vw - 24px));box-shadow:0 24px 64px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.05);animation:dlgIn .25s ease}
-    @keyframes dlgIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
-    dialog::backdrop{background:rgba(11,20,40,.5);backdrop-filter:blur(3px)}
-    .dlg{padding:24px}
-    .dlg h3{margin:0 0 4px;color:var(--forest);font-size:17px;font-weight:700}
-    .dlg .opts{display:grid;gap:8px;margin:14px 0}
-    .dlg .opt{flex-direction:row;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;font-weight:400;transition:border-color .2s,background .2s}
-    .dlg .opt:hover{border-color:#a8b3c5;background:#f8fafd}
-    .dlg .opt input{margin-top:3px;min-height:0}
-    .dlg .list{max-height:min(320px,45vh);overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px}
-    .dlg .list label{flex-direction:row;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-weight:400;font-size:13.5px;transition:background .15s}
-    .dlg .list label:hover{background:#f0f3f8}
-    .dlg .list input{min-height:0}
-    .dlg .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-    .dlg input[type=search]{width:100%;margin-bottom:8px}
-    [hidden]{display:none!important}
-
-    /* ── Mobile label (hidden on desktop) ──── */
-    td .mobile-label{display:none}
-
-    /* ── Responsive: Mobile ────────────────── */
-    @media (max-width:700px){
-      .bar{padding:14px 16px}
-      .bar .who{margin-left:0;width:100%;padding-top:4px;border-top:1px solid rgba(255,255,255,.1)}
-      main{padding:16px 12px 48px}
-      section{padding:18px 16px;border-radius:14px}
-      .grid{grid-template-columns:1fr}
-
-      /* Card layout for team table */
-      .scroll{overflow-x:visible}
-      table{min-width:0}
-      thead{display:none}
-      colgroup{display:none}
-      tbody{display:flex;flex-direction:column;gap:12px}
-      tr{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-      tbody tr:hover{background:#fff}
-      td{border:0;padding:0}
-
-      /* Mobile labels */
-      td .mobile-label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-
-      /* Name spans full row */
-      td:nth-child(1){grid-column:1 / -1;padding-bottom:4px;border-bottom:1px solid var(--line)}
-      td:nth-child(1) strong{font-size:15px}
-      /* Role & Client access side by side */
-      td:nth-child(2) select{width:100%;min-height:38px}
-      /* Status & Last sign-in side by side */
-      /* Actions full width */
-      td:nth-child(6){grid-column:1 / -1;padding-top:6px;border-top:1px solid var(--line)}
-      .actions{gap:8px}
-      .actions button{flex:1;min-height:38px;font-size:12.5px}
+    /* Mobile */
+    td .mobile-label { display:none; }
+    @media (max-width:768px) {
+      .scroll { overflow-x:visible; border:none; }
+      table { min-width:0; }
+      thead, colgroup { display:none; }
+      tbody { display:flex; flex-direction:column; gap:12px; }
+      tr { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; padding:16px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; }
+      [data-theme="dark"] tr { background:#111a2e; border-color:rgba(255,255,255,0.08); }
+      td { border:0; padding:0; }
+      td .mobile-label { display:block; font-size:10.5px; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; }
+      td:nth-child(1) { grid-column:1 / -1; padding-bottom:8px; border-bottom:1px solid #e2e8f0; }
+      [data-theme="dark"] td:nth-child(1) { border-bottom-color:rgba(255,255,255,0.08); }
+      td:nth-child(6) { grid-column:1 / -1; padding-top:8px; border-top:1px solid #e2e8f0; }
+      [data-theme="dark"] td:nth-child(6) { border-top-color:rgba(255,255,255,0.08); }
     }
-
-    @media (max-width:420px){
-      tr{grid-template-columns:1fr}
-      td:nth-child(2),td:nth-child(3),td:nth-child(4),td:nth-child(5){grid-column:1 / -1}
-    }
-    /* ── Skeleton loading shimmer system ─────────────────── */
-    @keyframes ch-shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-    .ch-skeleton {
-      background: linear-gradient(90deg, #edf2f7 0%, #f7f9fc 50%, #edf2f7 100%);
-      background-size: 200% 100%;
-      animation: ch-shimmer 1.5s ease-in-out infinite;
-      border-radius: 6px;
-      display: inline-block;
-      vertical-align: middle;
-    }
-    .ch-skeleton.block { display: block; }
-    .ch-skeleton-text { height: 12px; border-radius: 4px; margin-bottom: 6px; }
-    .ch-skeleton-circle { border-radius: 50% !important; flex-shrink: 0; }
   </style>
 </head>
 <body>
-  <header class="bar">
-    <a href="/">&larr; Ad Reports</a>
-    <h1>Team &amp; logins</h1>
-    <span class="who" id="who"></span>
-    <button type="button" id="logout">Sign out</button>
-  </header>
-  <main>
-    <section>
-      <h2>Your password</h2>
-      <p class="sub">Changing it signs you out on your other devices.</p>
-      <form id="password" class="grid">
-        <label>Current password <input type="password" name="current" autocomplete="current-password" required /></label>
-        <label>New password (8+ characters) <input type="password" name="next" autocomplete="new-password" minlength="8" required /></label>
-        <button type="submit">Change password</button>
-      </form>
-      <div class="msg" id="password-msg"></div>
-    </section>
+  <!-- Standard Workspace Sidebar -->
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="brand">
+      <img class="brand-logo" src="/assets/Pulse_Logo.png" alt="Pulse by CreativHeads">
+    </div>
+    <button class="workspace-select" onclick="location.href='/#/portfolio'">
+      <span class="workspace-icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+      <span>Pulse<small>by CreativHeads</small></span>
+      <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <nav style="overflow-y:auto;flex:1;min-height:0">
+      <div class="nav-group">
+        <div class="nav-label">WORKSPACE</div>
+        <a href="/#/portfolio" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Portfolio</span></a>
+        <a href="/#/clients" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/></svg><span>Clients</span></a>
+        <a href="/#/reviews" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 2.8 6.2L21 12l-6.2 2.8L12 21l-2.8-6.2L3 12l6.2-2.8L12 3ZM20 2v4m-2-2h4"/></svg><span>AI reviews</span></a>
+        <a href="/insights" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 2.8 6.2L21 12l-6.2 2.8L12 21l-2.8-6.2L3 12l6.2-2.8L12 3ZM20 2v4m-2-2h4"/></svg><span>Insights</span></a>
+        <a href="/#/flags" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 21V4m0 0c5-5 9 5 15 0v11c-6 5-10-5-15 0"/></svg><span>Flags &amp; alerts</span></a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">REPORTING</div>
+        <a href="/#/reports" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></svg><span>Client reports</span></a>
+        <a href="/creatives" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Reports &amp; PDFs</span></a>
+        <a href="/#/feedback" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H3l1.5-5A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8 9h8M8 13h5"/></svg><span>Lead feedback</span></a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">MANAGEMENT</div>
+        <a href="/#/accounts" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="15" rx="2"/><path d="M8 22h8m-4-3v3M3 9h18"/></svg><span>Ad accounts</span></a>
+        <a href="/#/settings" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 2 2 3 3-.3.7 3 2.8 1.8L19 12l1.5 2.5-2.8 1.8-.7 3-3-.3-2 3-2-3-3 .3-.7-3-2.8-1.8L5 12 3.5 9.5l2.8-1.8.7-3 3 .3 2-3Z"/><circle cx="12" cy="12" r="3"/></svg><span>Settings</span></a>
+        <a href="/team" class="nav-item active" aria-current="page"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/></svg><span>Team &amp; logins</span></a>
+      </div>
+    </nav>
+  </aside>
 
-    <section id="admin" hidden>
-      <h2>Add a team member</h2>
-      <p class="sub">Share the username and password with them directly. They can change the password after signing in.</p>
-      <form id="add" class="grid">
-        <label>Name <input name="name" required maxlength="60" /></label>
-        <label>Username <input name="username" required autocapitalize="none" spellcheck="false" pattern="[A-Za-z0-9._\-]{3,32}" title="3–32 letters, numbers, dot, dash or underscore" /></label>
-        <label>Role
-          <select name="role">
-            <option value="staff">Read-only staff</option>
-            <option value="performance">Performance team</option>
-            <option value="admin">Admin</option>
-          </select>
-        </label>
-        <label>Password (8+ characters) <input name="password" type="text" minlength="8" required autocomplete="off" /></label>
-        <label>Client access <button type="button" class="access" id="add-access">All clients</button></label>
-        <button type="submit">Add user</button>
-      </form>
-      <div class="msg" id="add-msg"></div>
-      <ul class="roles" style="margin-top:14px">
-        <li><strong>Admin</strong>: everything, including this page.</li>
-        <li><strong>Performance team</strong>: reviews, feedback, reports and sending; cannot manage users.</li>
-        <li><strong>Read-only staff</strong>: can view everything and download PDFs, but cannot change anything.</li>
-        <li><strong>Client access</strong>: limit a Performance or Staff member to chosen clients; they only see those clients' data. Admins always see every client.</li>
-      </ul>
-    </section>
+  <!-- Main Shell -->
+  <div class="main-shell">
+    <header class="topbar">
+      <button class="icon-btn mobile-menu" id="mobile-menu-btn" aria-label="Open navigation">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="breadcrumbs">
+        <a href="/#/portfolio" style="color:#64748b;font-weight:500">Workspace</a>
+        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m9 5 7 7-7 7"/></svg>
+        <span style="color:#64748b;font-weight:500">Management</span>
+        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m9 5 7 7-7 7"/></svg>
+        <strong>Team &amp; logins</strong>
+      </div>
+      <div class="topbar-right">
+        <span class="user-pill" id="who" style="font-size:12.5px;color:var(--muted);font-weight:500"></span>
+        <button class="global-search" onclick="location.href='/#/portfolio'" aria-label="Search workspace">
+          <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg>
+          <span>Search workspace...</span><kbd>⌘ K</kbd>
+        </button>
+        <button class="icon-btn theme-toggle" id="theme-btn" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
+        <button class="ghost" id="logout" style="min-height:34px;padding:4px 12px;font-size:12px;display:inline-flex;align-items:center;gap:6px">
+          <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          <span>Sign out</span>
+        </button>
+      </div>
+    </header>
 
-    <section id="list" hidden>
-      <h2>Team members</h2>
-      <p class="sub" id="count"><span class="ch-skeleton" style="width:140px;height:14px"></span></p>
-      <div class="scroll"><table>
-        <colgroup><col class="col-name"/><col class="col-role"/><col class="col-access"/><col class="col-status"/><col class="col-login"/><col class="col-actions"/></colgroup>
-        <thead><tr><th>Name</th><th>Role</th><th>Client access</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead>
-        <tbody id="users">
-          <tr><td><div style="display:flex;align-items:center;gap:10px"><div class="ch-skeleton ch-skeleton-circle" style="width:34px;height:34px"></div><div><div class="ch-skeleton" style="width:110px;height:14px;margin-bottom:4px"></div><div class="ch-skeleton" style="width:75px;height:11px"></div></div></div></td><td><div class="ch-skeleton" style="width:110px;height:34px;border-radius:10px"></div></td><td><div class="ch-skeleton" style="width:90px;height:34px;border-radius:10px"></div></td><td><div class="ch-skeleton" style="width:60px;height:24px;border-radius:99px"></div></td><td><div class="ch-skeleton" style="width:85px;height:13px"></div></td><td><div style="display:flex;gap:6px"><div class="ch-skeleton" style="width:100px;height:34px;border-radius:10px"></div><div class="ch-skeleton" style="width:60px;height:34px;border-radius:10px"></div></div></td></tr>
-          <tr><td><div style="display:flex;align-items:center;gap:10px"><div class="ch-skeleton ch-skeleton-circle" style="width:34px;height:34px"></div><div><div class="ch-skeleton" style="width:130px;height:14px;margin-bottom:4px"></div><div class="ch-skeleton" style="width:85px;height:11px"></div></div></div></td><td><div class="ch-skeleton" style="width:110px;height:34px;border-radius:10px"></div></td><td><div class="ch-skeleton" style="width:90px;height:34px;border-radius:10px"></div></td><td><div class="ch-skeleton" style="width:60px;height:24px;border-radius:99px"></div></td><td><div class="ch-skeleton" style="width:85px;height:13px"></div></td><td><div style="display:flex;gap:6px"><div class="ch-skeleton" style="width:100px;height:34px;border-radius:10px"></div><div class="ch-skeleton" style="width:60px;height:34px;border-radius:10px"></div></div></td></tr>
-          <tr><td><div style="display:flex;align-items:center;gap:10px"><div class="ch-skeleton ch-skeleton-circle" style="width:34px;height:34px"></div><div><div class="ch-skeleton" style="width:100px;height:14px;margin-bottom:4px"></div><div class="ch-skeleton" style="width:70px;height:11px"></div></div></div></td><td><div class="ch-skeleton" style="width:110px;height:34px;border-radius:10px"></div></td><td><div class="ch-skeleton" style="width:90px;height:34px;border-radius:10px"></div></td><td><div class="ch-skeleton" style="width:60px;height:24px;border-radius:99px"></div></td><td><div class="ch-skeleton" style="width:85px;height:13px"></div></td><td><div style="display:flex;gap:6px"><div class="ch-skeleton" style="width:100px;height:34px;border-radius:10px"></div><div class="ch-skeleton" style="width:60px;height:34px;border-radius:10px"></div></div></td></tr>
-        </tbody>
-      </table></div>
-      <div class="msg" id="list-msg"></div>
-    </section>
-  </main>
+    <main class="content">
+      <!-- Modern Hero Banner -->
+      <div class="hero-banner">
+        <div class="hero-grid-ambient" aria-hidden="true"></div>
+        <div class="hero-glow-orb" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <div class="hero-top-meta">
+            <span class="live-status-pill"><span class="live-dot-pulse"></span>MANAGEMENT · ACCESS CONTROL</span>
+          </div>
+          <div class="hero-title-row">
+            <div>
+              <h1 class="hero-heading">Team &amp; logins</h1>
+              <p class="hero-subtitle">Manage workspace users, assign role-based permissions, and configure client-level visibility.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Password Card -->
+      <div class="team-card">
+        <h2>Your password</h2>
+        <p class="sub">Changing it signs you out on your other devices.</p>
+        <form id="password" class="grid">
+          <label>Current password <input type="password" name="current" autocomplete="current-password" required /></label>
+          <label>New password (8+ characters) <input type="password" name="next" autocomplete="new-password" minlength="8" required /></label>
+          <button type="submit">Change password</button>
+        </form>
+        <div class="msg" id="password-msg"></div>
+      </div>
+
+      <!-- Add Member Card -->
+      <div class="team-card" id="admin" hidden>
+        <h2>Add a team member</h2>
+        <p class="sub">Share the username and password with them directly. They can change the password after signing in.</p>
+        <form id="add" class="grid">
+          <label>Name <input name="name" required maxlength="60" placeholder="e.g. Rahul Sharma" /></label>
+          <label>Username <input name="username" required autocapitalize="none" spellcheck="false" pattern="[A-Za-z0-9._\-]{3,32}" title="3–32 letters, numbers, dot, dash or underscore" placeholder="e.g. rahul" /></label>
+          <label>Role
+            <select name="role">
+              <option value="staff">Read-only staff</option>
+              <option value="performance">Performance team</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+          <label>Password (8+ characters) <input name="password" type="text" minlength="8" required autocomplete="off" /></label>
+          <label>Client access <button type="button" class="access" id="add-access">All clients</button></label>
+          <button type="submit">Add user</button>
+        </form>
+        <div class="msg" id="add-msg"></div>
+        <ul class="roles" style="margin-top:16px">
+          <li><strong>Admin</strong>: Full access including user management and system settings.</li>
+          <li><strong>Performance team</strong>: Reviews, feedback, reports, and sending; cannot manage users.</li>
+          <li><strong>Read-only staff</strong>: Can view dashboards and download PDFs, but cannot edit settings.</li>
+          <li><strong>Client access</strong>: Limit a Performance or Staff member to specific clients; they only see those clients' data.</li>
+        </ul>
+      </div>
+
+      <!-- Members List Card -->
+      <div class="team-card" id="list" hidden>
+        <h2>Team members</h2>
+        <p class="sub" id="count">Loading active members...</p>
+        <div class="scroll"><table>
+          <colgroup><col class="col-name"/><col class="col-role"/><col class="col-access"/><col class="col-status"/><col class="col-login"/><col class="col-actions"/></colgroup>
+          <thead><tr><th>Name</th><th>Role</th><th>Client access</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead>
+          <tbody id="users">
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Loading team members...</td></tr>
+          </tbody>
+        </table></div>
+        <div class="msg" id="list-msg"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Client Access Dialog -->
   <dialog id="access-dlg"><form method="dialog" class="dlg" id="access-form">
     <h3 id="access-title">Client access</h3>
-    <p class="sub" style="margin:0">Choose which clients this person can see.</p>
+    <p class="sub" style="margin:0 0 12px">Choose which clients this person can see.</p>
     <div class="opts">
       <label class="opt"><input type="radio" name="mode" value="all" /><span><strong>All clients</strong><br><small class="sub">Including clients added later.</small></span></label>
       <label class="opt"><input type="radio" name="mode" value="some" /><span><strong>Only these clients</strong></span></label>
@@ -231,12 +275,25 @@
     <div class="msg" id="access-msg"></div>
     <div class="row"><button type="button" class="ghost" id="access-cancel">Cancel</button><button type="submit" id="access-save">Save</button></div>
   </form></dialog>
+
   <script>
     (function () {
       var me = null, clients = [], addClients = null, users = [];
       var ROLE = { admin: "Admin", performance: "Performance team", staff: "Read-only staff" };
       var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
       var when = function (iso) { return iso ? new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Never"; };
+      
+      // Theme toggle
+      var themeBtn = document.getElementById("theme-btn");
+      if (themeBtn) {
+        themeBtn.addEventListener("click", function() {
+          var cur = document.documentElement.getAttribute("data-theme") || "light";
+          var next = cur === "dark" ? "light" : "dark";
+          document.documentElement.setAttribute("data-theme", next);
+          try { localStorage.setItem("ch_theme", next); } catch(e){}
+        });
+      }
+
       function api(method, url, body) {
         return fetch(url, { method: method, headers: body ? { "content-type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined })
           .then(function (r) {

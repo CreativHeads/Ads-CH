@@ -3,67 +3,157 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f2444" />
-  <title>Reports &amp; creatives · CreativHeads</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230a63e0'/%3E%3Cpath d='M18 45V30h7v15m7 0V20h7v25m7 0V12h7v33' fill='%23ffffff'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="/creatives.css?v=6" />
+  <meta name="theme-color" content="#0b1f44" />
+  <title>Reports &amp; creatives · Pulse by CreativHeads</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2360a5fa'/%3E%3Cstop offset='100%25' stop-color='%232563eb'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='url(%23g)'/%3E%3Cpath d='M12 32h9l4-11 7 22 6-16 4 5h10' fill='none' stroke='%23ffffff' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>(function(){try{var t=localStorage.getItem('ch_theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+  <link rel="stylesheet" href="/styles.css?v=brand2" />
+  <link rel="stylesheet" href="/v3.css?v=brand2" />
+  <link rel="stylesheet" href="/brand.css?v=9" />
+  <link rel="stylesheet" href="/creatives.css?v=8" />
 </head>
 <body>
-  <header class="bar">
-    <a href="/" class="back">&larr; Ad Reports</a>
-    <h1>Reports &amp; creatives</h1>
-    <form id="filters" class="filters">
-      <label>Client <select id="account"></select></label>
-      <label>From <input type="date" id="from" required /></label>
-      <label>To <input type="date" id="to" required /></label>
-      <div class="presets">
-        <button type="button" data-preset="1">Yesterday</button>
-        <button type="button" data-preset="7">Last 7 days</button>
-        <button type="button" data-preset="mtd">This month</button>
-      </div>
-      <button type="submit" class="primary">Load</button>
-      <button type="button" id="pdf" class="primary ghost">Download PDF</button>
-    </form>
-  </header>
-  <main id="report" aria-live="polite">
-    <div class="skeleton-pill"><span class="pulse-dot"></span>Loading Meta creatives and reports…</div>
-    <section class="title" aria-hidden="true">
-      <div class="ch-skeleton" style="width:280px;height:28px;margin-bottom:8px"></div>
-      <div class="ch-skeleton ch-skeleton-text" style="width:480px;height:14px"></div>
-    </section>
-    <div class="tiles" aria-hidden="true" style="margin-top:16px">
-      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:70%;height:24px"></div></div>
-      <div class="tile accent"><span class="ch-skeleton ch-skeleton-dark ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton ch-skeleton-dark" style="width:80%;height:24px"></div></div>
-      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:60%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:75%;height:24px"></div></div>
-      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:55%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:70%;height:24px"></div></div>
-      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:45%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:65%;height:24px"></div></div>
-      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:65%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:75%;height:24px"></div></div>
-      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:60%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:70%;height:24px"></div></div>
-      <div class="tile"><span class="ch-skeleton ch-skeleton-text" style="width:50%;height:11px;margin-bottom:8px"></span><div class="ch-skeleton" style="width:60%;height:24px"></div></div>
+  <!-- Standard Workspace Sidebar -->
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="brand">
+      <img class="brand-logo" src="/assets/Pulse_Logo.png" alt="Pulse by CreativHeads">
     </div>
-    <div class="message" aria-hidden="true" style="margin:20px 0">
-      <header>
-        <div class="ch-skeleton" style="width:140px;height:16px"></div>
-        <div class="ch-skeleton" style="width:80px;height:28px;border-radius:8px;margin-left:auto"></div>
-      </header>
-      <div style="padding:16px">
-        <div class="ch-skeleton ch-skeleton-text" style="width:90%"></div>
-        <div class="ch-skeleton ch-skeleton-text" style="width:80%"></div>
-        <div class="ch-skeleton ch-skeleton-text" style="width:65%"></div>
+    <button class="workspace-select" onclick="location.href='/#/portfolio'">
+      <span class="workspace-icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+      <span>Pulse<small>by CreativHeads</small></span>
+      <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <nav style="overflow-y:auto;flex:1;min-height:0">
+      <div class="nav-group">
+        <div class="nav-label">WORKSPACE</div>
+        <a href="/#/portfolio" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Portfolio</span></a>
+        <a href="/#/clients" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/></svg><span>Clients</span></a>
+        <a href="/#/reviews" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 2.8 6.2L21 12l-6.2 2.8L12 21l-2.8-6.2L3 12l6.2-2.8L12 3ZM20 2v4m-2-2h4"/></svg><span>AI reviews</span></a>
+        <a href="/insights" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 2.8 6.2L21 12l-6.2 2.8L12 21l-2.8-6.2L3 12l6.2-2.8L12 3ZM20 2v4m-2-2h4"/></svg><span>Insights</span></a>
+        <a href="/#/flags" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 21V4m0 0c5-5 9 5 15 0v11c-6 5-10-5-15 0"/></svg><span>Flags &amp; alerts</span></a>
       </div>
-    </div>
-    <section class="campaign" aria-hidden="true">
-      <header style="margin-bottom:16px">
-        <div class="ch-skeleton" style="width:200px;height:24px;margin-bottom:6px"></div>
-        <div class="ch-skeleton ch-skeleton-text" style="width:300px;height:12px"></div>
-      </header>
-      <div class="ads">
-        <div class="ad"><div class="thumb ch-skeleton" style="flex:0 0 92px;height:116px"></div><div style="flex:1"><div class="ch-skeleton" style="width:140px;height:14px;margin-bottom:6px"></div><div class="ch-skeleton ch-skeleton-text" style="width:80px;height:11px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div></div>
-        <div class="ad"><div class="thumb ch-skeleton" style="flex:0 0 92px;height:116px"></div><div style="flex:1"><div class="ch-skeleton" style="width:140px;height:14px;margin-bottom:6px"></div><div class="ch-skeleton ch-skeleton-text" style="width:80px;height:11px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div></div>
-        <div class="ad"><div class="thumb ch-skeleton" style="flex:0 0 92px;height:116px"></div><div style="flex:1"><div class="ch-skeleton" style="width:140px;height:14px;margin-bottom:6px"></div><div class="ch-skeleton ch-skeleton-text" style="width:80px;height:11px;margin-bottom:12px"></div><div class="ch-skeleton ch-skeleton-text" style="width:90%"></div><div class="ch-skeleton ch-skeleton-text" style="width:70%"></div></div></div>
+      <div class="nav-group">
+        <div class="nav-label">REPORTING</div>
+        <a href="/#/reports" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></svg><span>Client reports</span></a>
+        <a href="/creatives" class="nav-item active" aria-current="page"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Reports &amp; PDFs</span></a>
+        <a href="/#/feedback" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H3l1.5-5A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8 9h8M8 13h5"/></svg><span>Lead feedback</span></a>
       </div>
-    </section>
-  </main>
+      <div class="nav-group">
+        <div class="nav-label">MANAGEMENT</div>
+        <a href="/#/accounts" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="15" rx="2"/><path d="M8 22h8m-4-3v3M3 9h18"/></svg><span>Ad accounts</span></a>
+        <a href="/#/settings" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 2 2 3 3-.3.7 3 2.8 1.8L19 12l1.5 2.5-2.8 1.8-.7 3-3-.3-2 3-2-3-3 .3-.7-3-2.8-1.8L5 12 3.5 9.5l2.8-1.8.7-3 3 .3 2-3Z"/><circle cx="12" cy="12" r="3"/></svg><span>Settings</span></a>
+        <a href="/team" class="nav-item"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/></svg><span>Team &amp; logins</span></a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Shell with Shared Topbar & Content -->
+  <div class="main-shell">
+    <header class="topbar">
+      <button class="icon-btn mobile-menu" id="mobile-menu-btn" aria-label="Open navigation">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="breadcrumbs">
+        <a href="/#/portfolio" style="color:#64748b;font-weight:500">Workspace</a>
+        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m9 5 7 7-7 7"/></svg>
+        <strong>Reports &amp; creatives</strong>
+      </div>
+      <div class="topbar-right">
+        <button class="global-search" onclick="location.href='/#/portfolio'" aria-label="Search workspace">
+          <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg>
+          <span>Search workspace...</span><kbd>⌘ K</kbd>
+        </button>
+        <button class="icon-btn theme-toggle" id="theme-btn" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
+        <span class="demo-label staff-gradient-pill">STAFF WORKSPACE</span>
+        <span class="topbar-avatar" title="Sign out" onclick="if(confirm('Sign out?'))fetch('/api/auth/logout',{method:'POST'}).finally(()=>location.href='/login')">MS</span>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- Modern Hero Banner -->
+      <div class="hero-banner">
+        <div class="hero-grid-ambient" aria-hidden="true"></div>
+        <div class="hero-glow-orb" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <div class="hero-top-meta">
+            <span class="live-status-pill"><span class="live-dot-pulse"></span>REPORTING · CREATIVES &amp; PDFS</span>
+            <span class="linear-tag">WORKSPACE · v3.4</span>
+          </div>
+          <div class="page-heading">
+            <div>
+              <h1>Reports &amp; <span class="gradient-text">creatives</span></h1>
+              <p>Creative performance grouped by campaign and branch location, with creative previews and ready-to-share summaries.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modern Filter Controls Card -->
+      <section class="card filter-card">
+        <form id="filters" class="creatives-filters-bar">
+          <div class="field-item">
+            <label for="account">Client</label>
+            <select id="account" class="select-field"></select>
+          </div>
+          <div class="field-item">
+            <label for="from">From date</label>
+            <input type="date" id="from" class="date-field" required />
+          </div>
+          <div class="field-item">
+            <label for="to">To date</label>
+            <input type="date" id="to" class="date-field" required />
+          </div>
+          <div class="field-item presets-wrap">
+            <label>Presets</label>
+            <div class="presets segmented">
+              <button type="button" data-preset="1">Yesterday</button>
+              <button type="button" data-preset="7">Last 7 days</button>
+              <button type="button" data-preset="mtd">This month</button>
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button type="submit" class="btn primary">
+              <svg class="icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 8a8 8 0 1 0 .5 7M20 3v5h-5"/></svg>
+              Load data
+            </button>
+            <button type="button" id="pdf" class="btn btn-export-gradient">
+              <svg class="icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>
+              Download PDF
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Dynamic Report Content -->
+      <div id="report" aria-live="polite">
+        <div class="skeleton-pill"><span class="pulse-dot"></span>Loading Meta creatives and reports…</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="mobile-shade" id="mobile-shade" aria-hidden="true"></div>
+
+  <script>
+    document.getElementById('theme-btn')?.addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('ch_theme', next);
+    });
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+      document.querySelector('.sidebar')?.classList.toggle('open');
+      document.getElementById('mobile-shade')?.classList.toggle('open');
+    });
+    document.getElementById('mobile-shade')?.addEventListener('click', () => {
+      document.querySelector('.sidebar')?.classList.remove('open');
+      document.getElementById('mobile-shade')?.classList.remove('open');
+    });
+  </script>
   <script type="module" src="/creatives.js?v=6"></script>
 </body>
 </html>

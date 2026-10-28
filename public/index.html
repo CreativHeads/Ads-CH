@@ -4,31 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b1f44" />
-  <meta name="description" content="CreativHeads Ad Reports — a focused workspace for performance, reviews, and daily reporting." />
-  <title>Ad Reports · CreativHeads</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230a63e0'/%3E%3Cpath d='M18 45V30h7v15m7 0V20h7v25m7 0V12h7v33' fill='%23ffffff'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="/styles.css?v=brand1" />
-  <link rel="stylesheet" href="/v3.css?v=brand1" />
-  <link rel="stylesheet" href="/brand.css?v=4" />
+  <meta name="description" content="Pulse by CreativHeads — Ad Reports &amp; AI Insights workspace for performance, reviews, and daily reporting." />
+  <title>Pulse by CreativHeads · Ad Reports &amp; AI Insights</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2360a5fa'/%3E%3Cstop offset='100%25' stop-color='%232563eb'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='url(%23g)'/%3E%3Cpath d='M12 32h9l4-11 7 22 6-16 4 5h10' fill='none' stroke='%23ffffff' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>(function(){try{var p=new URLSearchParams(window.location.search);var t=p.get('theme')||localStorage.getItem('ch_theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');if(p.has('theme')){try{localStorage.setItem('ch_theme',t);}catch(e){}}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+  <link rel="stylesheet" href="/styles.css?v=brand2" />
+  <link rel="stylesheet" href="/v3.css?v=brand2" />
+  <link rel="stylesheet" href="/brand.css?v=9" />
   <style>
     .sidebar{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
-    .metrics, .metrics.six{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:10px;margin-bottom:20px}
-    .metrics.six .metric{padding:12px 11px 10px;position:relative;min-width:0}
-    .metrics.six .metric-top span{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .metrics.six .metric-value{font-size:20px;letter-spacing:-0.5px;margin:6px 0 4px}
-    .metrics.six .metric-comparison{font-size:8.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .sparkline{display:none!important}
-    @media(max-width:1180px){
-      .metrics.six .metric-top span{font-size:10px}
-      .metrics.six .metric-value{font-size:18px}
-      .metrics.six .metric{padding:10px 8px 8px}
-    }
-    @media(max-width:820px){
-      .metrics, .metrics.six{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px}
-    }
-    @media(max-width:540px){
-      .metrics, .metrics.six{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px}
-    }
 
     /* Instant skeleton styles */
     @keyframes ch-shimmer {
@@ -39,7 +27,7 @@
       background: linear-gradient(90deg, #edf2f7 0%, #f7f9fc 50%, #edf2f7 100%);
       background-size: 200% 100%;
       animation: ch-shimmer 1.5s ease-in-out infinite;
-      border-radius: 6px;
+      border-radius: 8px;
       display: inline-block;
       vertical-align: middle;
     }
@@ -48,6 +36,14 @@
       background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.06) 100%);
       background-size: 200% 100%;
       animation: ch-shimmer 1.5s ease-in-out infinite;
+    }
+    [data-theme="dark"] body { background: #090d16; color: #f8fafc; }
+    [data-theme="dark"] .sidebar { background: #0f172a; border-right-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); border-bottom-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] .card, [data-theme="dark"] .metric { background: #0f172a; border-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] .ch-skeleton {
+      background: linear-gradient(90deg, #131b2e 0%, #1f2b48 50%, #131b2e 100%);
+      background-size: 200% 100%;
     }
   </style>
 </head>
@@ -71,16 +67,7 @@
         <div class="ch-skeleton" style="width:100%;height:38px;border-radius:10px;margin-bottom:6px"></div>
         <div class="ch-skeleton" style="width:100%;height:38px;border-radius:10px;margin-bottom:6px"></div>
       </nav>
-      <div class="sidebar-bottom" style="padding:12px">
-        <div class="ch-skeleton" style="width:100%;height:46px;border-radius:12px;margin-bottom:12px"></div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="ch-skeleton ch-skeleton-circle" style="width:36px;height:36px"></div>
-          <div style="flex:1">
-            <div class="ch-skeleton" style="width:80px;height:12px;margin-bottom:4px"></div>
-            <div class="ch-skeleton" style="width:110px;height:10px"></div>
-          </div>
-        </div>
-      </div>
+
     </aside>
     <div class="main-shell" aria-hidden="true">
       <header class="topbar">
@@ -190,7 +177,7 @@
         window.__CH_STATE = state && state.staff ? state : null;
         var script = document.createElement("script");
         script.type = "module";
-        script.src = "/app.js";
+        script.src = "/app.js?v=" + Date.now();
         document.body.appendChild(script);
       }
       function start(state) {

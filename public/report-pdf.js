@@ -7,7 +7,7 @@ export async function createReportPdf(model,supplied){
  const {PDFLib,fontkit,regular,bold,currencyFont}=supplied||await getDependencies();
  const {PDFDocument,rgb}=PDFLib,doc=await PDFDocument.create();doc.registerFontkit(fontkit);
  const font=await doc.embedFont(regular,{subset:true}),strong=await doc.embedFont(bold,{subset:true}),symbol=await doc.embedFont(currencyFont,{subset:true});
- doc.setTitle(`${model.clientName} — Ad report, ${model.period}`);doc.setAuthor('CreativHeads');doc.setProducer('CreativHeads');doc.setCreator('CreativHeads');doc.setCreationDate(new Date('2026-10-25T00:00:00Z'));doc.setModificationDate(new Date('2026-10-25T00:00:00Z'));
+ doc.setTitle(`${model.clientName} — Ad report, ${model.period}`);doc.setAuthor('Pulse by CreativHeads');doc.setProducer('Pulse by CreativHeads');doc.setCreator('Pulse by CreativHeads');doc.setCreationDate(new Date('2026-10-25T00:00:00Z'));doc.setModificationDate(new Date('2026-10-25T00:00:00Z'));
  const loadAsset=supplied?.loadAsset|| (async url=>{const r=await fetch(url);if(!r.ok)throw new Error('Creative could not load');return new Uint8Array(await r.arrayBuffer())});
  const embeddedImages=new Map();const imageUrls=[...new Set(model.campaigns.flatMap(c=>c.adsets.flatMap(s=>s.ads.map(a=>a.thumbnail))).filter(Boolean))];
  await Promise.all(imageUrls.map(async url=>{try{const bytes=new Uint8Array(await loadAsset(url));embeddedImages.set(url,/\.png$/i.test(url)?await doc.embedPng(bytes):await doc.embedJpg(bytes))}catch(error){if(supplied?.strictImages)throw error;embeddedImages.set(url,null)}}));

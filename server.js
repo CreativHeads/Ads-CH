@@ -561,7 +561,7 @@ const server = http.createServer((req, res) => {
   }
 
   // Every page needs a login, except the login page itself and its fonts/logo.
-  const open = PUBLIC_PAGES.has(url.pathname) || /^\/assets\/(hanken-[a-z]+\.ttf|creativheads-logo\.png)$/.test(url.pathname);
+  const open = PUBLIC_PAGES.has(url.pathname) || /^\/assets\/(hanken-[a-z]+\.ttf|creativheads-logo\.png|Pulse_Logo.*\.png)$/i.test(url.pathname);
   if (!open && !(auth && auth.currentUser(req))) {
     const next = url.pathname === "/" ? "" : `?next=${encodeURIComponent(url.pathname + url.search)}`;
     res.writeHead(302, { Location: `/login${next}`, "Cache-Control": "no-store" });
@@ -588,7 +588,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`CreativHeads Ad Reports listening on ${port}`);
+  console.log(`Pulse by CreativHeads listening on ${port}`);
   syncLive();
   setInterval(syncLive, 3 * 60 * 60 * 1000).unref();
   // Windsor's ad-level query is slow (~45s), so keep the default "last 7 days" range warm.

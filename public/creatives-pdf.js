@@ -1,5 +1,5 @@
-// Branded CreativHeads performance report PDF, built in the browser with pdf-lib.
-// Theme follows the CreativHeads weekly report: light-blue logo header box, rounded tables
+// Branded Pulse by CreativHeads performance report PDF, built in the browser with pdf-lib.
+// Theme follows the Pulse by CreativHeads weekly report: light-blue logo header box, rounded tables
 // (blue headers on the summary page, black on detail pages), blue section titles, and
 // full-width creative cards with "Label: value" lines.
 // Layout: totals, spend by branch, campaign summary, then each campaign -> each location -> its creatives.
@@ -18,7 +18,7 @@ async function dependencies() {
   if (!deps) deps = (async () => {
     if (!window.PDFLib) await loadScript("/vendor/pdf-lib.min.js");
     if (!window.fontkit) await loadScript("/vendor/fontkit.umd.min.js");
-    const bytes = await Promise.all(["/assets/hanken-regular.ttf", "/assets/hanken-semibold.ttf", "/assets/creativheads-logo.png?v=2"].map(async (url) => {
+    const bytes = await Promise.all(["/assets/hanken-regular.ttf", "/assets/hanken-semibold.ttf", "/assets/Pulse_Logo.png"].map(async (url) => {
       const r = await fetch(url);
       if (!r.ok) throw new Error("PDF asset could not load");
       return r.arrayBuffer();
@@ -51,8 +51,8 @@ export async function buildReportPdf(model) {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
   doc.setTitle(model.title);
-  doc.setAuthor("CreativHeads");
-  doc.setProducer("CreativHeads Ad Reports");
+  doc.setAuthor("Pulse by CreativHeads");
+  doc.setProducer("Pulse by CreativHeads · Ad Reports & AI Insights");
   const font = await doc.embedFont(regular, { subset: true });
   const strong = await doc.embedFont(bold, { subset: true });
   const logoImg = await doc.embedPng(logo);
@@ -112,7 +112,7 @@ export async function buildReportPdf(model) {
       const lh = 34, lw = (logoImg.width / logoImg.height) * lh;
       page.drawImage(logoImg, { x: M + 10, y: top - bh / 2 - lh / 2, width: lw, height: lh });
       right("PERFORMANCE REPORT", W - M - 12, top - 15, 8, strong, C.blue);
-      right("Prepared by CreativHeads", W - M - 12, top - 30, 12, strong, C.ink);
+      right("Prepared by Pulse by CreativHeads", W - M - 12, top - 30, 12, strong, C.ink);
       right("for " + model.account, W - M - 12, top - 42, 8, font, C.muted);
       y = top - bh - 34;
     } else {
@@ -211,7 +211,7 @@ export async function buildReportPdf(model) {
     y -= 25;
   }
   y += 4;
-  for (const line of wrap("CreativHeads Performance team. Ads with spend during " + model.period + " (totals for the period), grouped by campaign; inside each campaign every location is shown separately, sorted by spend (high to low). Thumbnails are stills; video ads are not playable in the PDF.", CW, 8.5, font, 3)) {
+  for (const line of wrap("Pulse by CreativHeads Performance team. Ads with spend during " + model.period + " (totals for the period), grouped by campaign; inside each campaign every location is shown separately, sorted by spend (high to low). Thumbnails are stills; video ads are not playable in the PDF.", CW, 8.5, font, 3)) {
     text(line, M, y, 8.5, font, C.muted);
     y -= 12;
   }
@@ -313,7 +313,7 @@ export async function buildReportPdf(model) {
   pages.forEach((p, i) => {
     p.drawLine({ start: { x: M, y: 36 }, end: { x: W - M, y: 36 }, thickness: 0.9, color: C.blue });
     p.drawText(fit(model.title, CW - 200, 7.5), { x: M, y: 24, size: 7.5, font, color: C.ink });
-    const label = `CreativHeads · Performance Report · page ${i + 1}/${pages.length}`;
+    const label = `Pulse by CreativHeads · Performance Report · page ${i + 1}/${pages.length}`;
     p.drawText(label, { x: W - M - width(label, 7.5), y: 24, size: 7.5, font, color: C.blue });
   });
   return doc.save();
