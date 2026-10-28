@@ -533,6 +533,46 @@ async function handleApi(req, res, pathname, user) {
     return sendJson(res, 200, { summary: String(parsed.summary || ""), severity: parsed.overall_severity || null, mode: "openai" });
   }
 
+  if (req.method === "POST" && pathname === "/api/parse-feedback") {
+    const data = JSON.parse((await readBody(req, 200_000)).toString("utf8"));
+    const key = process.env.OPENAI_API_KEY;
+    if (!key) return sendJson(res, 200, { rows: null, mode: "rules" });
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+          temperature: 0.0,
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content: "You are an AI lead outcome parser for an ad agency. Extract dated lead status outcome counts from unstructured client WhatsApp text dumps. Understand date ranges (e.g. '19–26 October' means use the end date '2026-10-26'), aggregate counts (e.g. 'Cold- 32', 'Warm leads 6', 'Dead leads 8', 'RNR + Not Connecting- 14'), and map each to the best matching status ID from the provided statuses list. Ignore header summary counts like 'Total leads 60' or 'Overall lead' when outputting breakdown rows, but record total_reported if stated. Return JSON with { date: string (YYYY-MM-DD), total_reported: number|null, rows: [{ status: string, count: number, branch: string, campaign: string }], warnings: string[] }."
+            },
+            {
+              role: "user",
+              content: JSON.stringify({
+                text: data.text,
+                available_statuses: data.statuses,
+                branches: data.branches || [],
+                campaigns: data.campaigns || [],
+                default_date: data.defaultDate || kolkataDate()
+              })
+            }
+          ]
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      const content = payload.choices?.[0]?.message?.content;
+      if (!response.ok || !content) return sendJson(res, 200, { rows: null, mode: "rules" });
+      const parsed = JSON.parse(content);
+      return sendJson(res, 200, { ...parsed, mode: "openai" });
+    } catch {
+      return sendJson(res, 200, { rows: null, mode: "rules" });
+    }
+  }
+
   sendJson(res, 404, { error: "not found" });
 }
 
