@@ -154,25 +154,52 @@ function aiCard() {
   return `<section class="card ai"><div class="card-head"><h3>${ICON.spark}AI summary</h3><span class="pill model">${data.openai ? esc(data.model) : "OpenAI not connected"}</span>${tools}</div>${body}</section>`;
 }
 
-// ---- breakdown rows: bar = share of conversations; numbers written out ----
-function rows(list, totalConv) {
+// ---- breakdown rows: bar = share of the chosen result (conversations or leads); numbers written out ----
+const METRICS = {
+  conv: { key: "conv", label: "Conversations", one: "conversation", short: "conv.", cost: (x) => x.cpc },
+  leads: { key: "leads", label: "Leads", one: "lead", short: "leads", cost: (x) => (x.leads ? x.spend / x.leads : null) },
+};
+let metric = "conv";
+try { if (localStorage.getItem("insights.metric") in METRICS) metric = localStorage.getItem("insights.metric"); } catch { /* storage blocked */ }
+
+function rows(list, total) {
+  const M = METRICS[metric], v = (x) => x[M.key] || 0;
   const useful = list.filter((x) => x.spend >= 1);
   if (!useful.length) return `<p class="footnote">No data for this period.</p>`;
-  const best = useful.filter((x) => x.conv >= Math.max(3, totalConv * 0.15)).sort((a, b) => a.cpc - b.cpc)[0];
-  const max = Math.max(1, ...useful.map((x) => x.conv));
+  if (!useful.some(v)) return `<p class="footnote">No ${M.label.toLowerCase()} in this period.</p>`;
+  const best = useful.filter((x) => v(x) >= Math.max(3, total * 0.15)).sort((a, b) => M.cost(a) - M.cost(b))[0];
+  const max = Math.max(1, ...useful.map(v));
   return `<div class="rows">${useful.slice(0, 8).map((x) => `<div class="brow">
       <div class="name">${esc(x.key)}${best && x.key === best.key ? `<span class="best">best cost</span>` : ""}<small>${money(x.spend)} · ${num(x.clicks)} clicks</small></div>
-      <div class="track" role="img" aria-label="${esc(x.key)}: ${x.conv} conversations"><div class="fill" style="width:${(x.conv / max) * 100}%"></div></div>
-      <div class="val"><b>${num(x.conv)}</b> conv.<small>${money(x.cpc)} each</small></div></div>`).join("")}</div>
-    <details class="table"><summary>Show as table</summary><div class="scroll"><table><thead><tr><th></th><th class="num">Spend</th><th class="num">Clicks</th><th class="num">Conv.</th><th class="num">Cost / conv.</th></tr></thead><tbody>${list.map((x) => `<tr><td>${esc(x.key)}</td><td class="num">${money(x.spend)}</td><td class="num">${num(x.clicks)}</td><td class="num">${num(x.conv)}</td><td class="num">${money(x.cpc)}</td></tr>`).join("")}</tbody></table></div></details>`;
+      <div class="track" role="img" aria-label="${esc(x.key)}: ${v(x)} ${M.label.toLowerCase()}"><div class="fill" style="width:${(v(x) / max) * 100}%"></div></div>
+      <div class="val"><b>${num(v(x))}</b> ${M.short}<small>${money(M.cost(x))} each</small></div></div>`).join("")}</div>
+    <details class="table"><summary>Show as table</summary><div class="scroll"><table><thead><tr><th></th><th class="num">Spend</th><th class="num">Clicks</th><th class="num">Conv.</th><th class="num">Cost / conv.</th><th class="num">Leads</th><th class="num">Cost / lead</th></tr></thead><tbody>${list.map((x) => `<tr><td>${esc(x.key)}</td><td class="num">${money(x.spend)}</td><td class="num">${num(x.clicks)}</td><td class="num">${num(x.conv)}</td><td class="num">${money(x.cpc)}</td><td class="num">${num(x.leads || 0)}</td><td class="num">${money(METRICS.leads.cost(x))}</td></tr>`).join("")}</tbody></table></div></details>`;
 }
 function hourChart(hours) {
-  const max = Math.max(1, ...hours.map((h) => h.conv));
-  const top = [...hours].sort((x, y) => y.conv - x.conv).slice(0, 4).filter((h) => h.conv).map((h) => h.hour);
+  const M = METRICS[metric], v = (h) => h[M.key] || 0;
+  const max = Math.max(1, ...hours.map(v));
+  const top = [...hours].sort((x, y) => v(y) - v(x)).slice(0, 4).filter(v).map((h) => h.hour);
   const label = (h) => (h === 0 ? "12a" : h < 12 ? `${h}a` : h === 12 ? "12p" : `${h - 12}p`);
-  return `<div class="chart"><div class="plot">${hours.map((h) => `<div class="col ${top.includes(h.hour) ? "top" : ""}" tabindex="0" aria-label="${label(h.hour)}: ${h.conv} conversations, ${money(h.spend)} spent">
-      <i style="height:${Math.max(1.5, (h.conv / max) * 100)}%"></i><span class="tip">${label(h.hour)}–${label((h.hour + 1) % 24)} · <b>${h.conv}</b> conv. · ${money(h.cpc)} each</span></div>`).join("")}</div>
+  return `<div class="chart"><div class="plot">${hours.map((h) => `<div class="col ${top.includes(h.hour) ? "top" : ""}" tabindex="0" aria-label="${label(h.hour)}: ${v(h)} ${M.label.toLowerCase()}, ${money(h.spend)} spent">
+      <i style="height:${Math.max(1.5, (v(h) / max) * 100)}%"></i><span class="tip">${label(h.hour)}–${label((h.hour + 1) % 24)} · <b>${v(h)}</b> ${M.short} · ${money(M.cost(h))} each</span></div>`).join("")}</div>
     <div class="axis">${hours.map((h) => `<span>${h.hour % 3 === 0 ? label(h.hour) : ""}</span>`).join("")}</div></div>`;
+}
+function breakdowns() {
+  const a = data.audit, t = a.totals, M = METRICS[metric], total = t[M.key] || 0;
+  return `<div class="card-head breakdown-head"><h3>${ICON.chart}Breakdowns</h3><small>show results as</small>
+      <div class="findings-filter" role="tablist" aria-label="Show breakdowns by">${Object.values(METRICS).map((x) => `<button type="button" role="tab" class="filter-btn ${x.key === metric ? "active" : ""}" aria-selected="${x.key === metric}" data-metric="${x.key}">${x.label} <span class="count">${num(t[x.key] || 0)}</span></button>`).join("")}</div></div>
+    <div class="grid2 row-gap"><section class="card"><div class="card-head"><h3>${ICON.grid}Placement</h3><small>${M.label.toLowerCase()} and cost per ${M.one}</small></div>${rows(a.placements, total)}</section>
+    <section class="card"><div class="card-head"><h3>${ICON.clock}Time of day</h3><small>${M.label.toLowerCase()} by hour · hover a bar</small></div>${hourChart(a.hours)}${rows(a.dayparts, total)}</section></div>
+    <div class="grid2 row-gap"><section class="card"><div class="card-head"><h3>${ICON.users}Age</h3></div>${rows(a.ages, total)}</section>
+    <section class="card"><div class="card-head"><h3>${ICON.users}Gender</h3></div>${rows(a.genders, total)}<p class="footnote">Where the ads ran: ${a.regions.filter((r) => r.spend >= t.spend * 0.01).map((r) => `${esc(r.key)} ${Math.round((r.spend / t.spend) * 100)}%`).join(", ") || "—"}. Meta does not report ${M.label.toLowerCase()} by town.</p></section></div>`;
+}
+function bindBreakdowns() {
+  document.querySelectorAll("[data-metric]").forEach((b) => b.addEventListener("click", () => {
+    metric = b.dataset.metric;
+    try { localStorage.setItem("insights.metric", metric); } catch { /* storage blocked */ }
+    $("breakdowns").innerHTML = breakdowns();
+    bindBreakdowns();
+  }));
 }
 
 const FINDING_SECTIONS = [
@@ -242,10 +269,7 @@ function render() {
     </div>
   </section>`;
   html += `<section class="card"><div class="card-head"><h3>${ICON.list}Suggested changes</h3><small>for whoever manages the ad account</small></div><ol class="steps">${a.suggestions.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></section>`;
-  html += `<div class="grid2 row-gap"><section class="card"><div class="card-head"><h3>${ICON.grid}Placement</h3><small>conversations and cost per conversation</small></div>${rows(a.placements, t.conv)}</section>
-    <section class="card"><div class="card-head"><h3>${ICON.clock}Time of day</h3><small>conversations by hour · hover a bar</small></div>${hourChart(a.hours)}${rows(a.dayparts, t.conv)}</section></div>`;
-  html += `<div class="grid2 row-gap"><section class="card"><div class="card-head"><h3>${ICON.users}Age</h3></div>${rows(a.ages, t.conv)}</section>
-    <section class="card"><div class="card-head"><h3>${ICON.users}Gender</h3></div>${rows(a.genders, t.conv)}<p class="footnote">Where the ads ran: ${a.regions.filter((r) => r.spend >= t.spend * 0.01).map((r) => `${esc(r.key)} ${Math.round((r.spend / t.spend) * 100)}%`).join(", ") || "—"}. Meta does not report conversations by town.</p></section></div>`;
+  html += `<div id="breakdowns">${breakdowns()}</div>`;
   html += `<section class="card"><div class="card-head"><h3>${ICON.chart}Every ad</h3><small>goal, button and destination decide whether an ad can start WhatsApp chats</small></div><div class="ads">${a.ads.map((x) => {
     const mis = mismatchMap.get(x.adset);
     let tagHtml;
@@ -293,6 +317,7 @@ function render() {
     });
   });
 
+  bindBreakdowns();
   document.querySelectorAll("[data-write]").forEach((b) => b.addEventListener("click", writeSummary));
   $("copy")?.addEventListener("click", async (e) => {
     const b = e.currentTarget;
