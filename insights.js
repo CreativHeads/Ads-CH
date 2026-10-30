@@ -26,7 +26,7 @@ const POSITION = { feed: "Feed", facebook_reels: "Reels", instagram_reels: "Reel
 const n = (v) => Number(v) || 0;
 const metrics = (rows) => {
   const t = { spend: 0, impressions: 0, clicks: 0, conv: 0, leads: 0 };
-  for (const r of rows) { t.spend += n(r.spend); t.impressions += n(r.impressions); t.clicks += n(r.link_clicks); t.conv += n(r[CONV]); t.leads += n(r.actions_lead); }
+  for (const r of rows) { t.spend += n(r.spend); t.impressions += n(r.impressions); t.clicks += n(r.link_clicks); t.conv += n(r[CONV]); t.leads += n(r.actions_lead) + n(r[CONV]); } // leads = form leads + WhatsApp chats, as on the Portfolio
   t.cpc = t.conv ? t.spend / t.conv : null;
   t.ctr = t.impressions ? (t.clicks / t.impressions) * 100 : 0;
   return t;
