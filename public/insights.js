@@ -160,7 +160,6 @@ const METRICS = {
   leads: { key: "leads", label: "Leads", one: "lead", short: "leads", cost: (x) => (x.leads ? x.spend / x.leads : null) },
 };
 let metric = "conv";
-try { if (localStorage.getItem("insights.metric") in METRICS) metric = localStorage.getItem("insights.metric"); } catch { /* storage blocked */ }
 
 function rows(list, total) {
   const M = METRICS[metric], v = (x) => x[M.key] || 0;
@@ -196,7 +195,6 @@ function breakdowns() {
 function bindBreakdowns() {
   document.querySelectorAll("[data-metric]").forEach((b) => b.addEventListener("click", () => {
     metric = b.dataset.metric;
-    try { localStorage.setItem("insights.metric", metric); } catch { /* storage blocked */ }
     $("breakdowns").innerHTML = breakdowns();
     bindBreakdowns();
   }));
@@ -236,7 +234,11 @@ function render() {
     $("out").innerHTML = `<div class="status">No spend for ${esc(data.account)} in ${esc(period(data.from, data.to))}.</div>`;
     return;
   }
-  const kpis = [["Spend", money(t.spend), true], ["WA conversations", num(t.conv)], ["Cost / conversation", money(t.cpc)], ["Reach", num(t.reach)], ["Link clicks", num(t.clicks)], ["CTR", t.ctr.toFixed(2) + "%"], ["Leads", num(t.leads)], ["Ads running", num(t.ads)]];
+  // lead accounts lead with leads and cost per lead; chat accounts with WhatsApp conversations
+  const leadsFirst = a.focus === "leads";
+  const main = leadsFirst ? [["Leads", num(t.leads)], ["Cost / lead", money(METRICS.leads.cost(t))]] : [["WA conversations", num(t.conv)], ["Cost / conversation", money(t.cpc)]];
+  const other = leadsFirst ? ["WA conversations", num(t.conv)] : ["Leads", num(t.leads)];
+  const kpis = [["Spend", money(t.spend), true], ...main, ["Reach", num(t.reach)], ["Link clicks", num(t.clicks)], ["CTR", t.ctr.toFixed(2) + "%"], other, ["Ads running", num(t.ads)]];
   const order = { high: 0, medium: 1, good: 2, info: 3 };
   const findings = [...a.findings].sort((x, y) => order[x.severity] - order[y.severity]);
   const mismatchMap = new Map((a.locationMismatches || []).map((m) => [m.adset, m]));
@@ -271,20 +273,22 @@ function render() {
   </section>`;
   if (me?.role !== "staff") html += `<section class="card"><div class="card-head"><h3>${ICON.list}Suggested changes</h3><small>for whoever manages the ad account</small></div><ol class="steps">${a.suggestions.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></section>`;
   html += `<div id="breakdowns">${breakdowns()}</div>`;
-  html += `<section class="card"><div class="card-head"><h3>${ICON.chart}Every ad</h3><small>goal, button and destination decide whether an ad can start WhatsApp chats</small></div><div class="ads">${a.ads.map((x) => {
+  html += `<section class="card"><div class="card-head"><h3>${ICON.chart}Every ad</h3><small>goal, button and destination decide whether an ad can bring chats or leads</small></div><div class="ads">${a.ads.map((x) => {
     const mis = mismatchMap.get(x.adset);
     let tagHtml;
-    if (!x.messaging) {
-      tagHtml = `<span class="tag warn" title="Not WhatsApp destination">Profile visit</span>`;
-    } else if (mis) {
+    if (mis) {
       tagHtml = `<span class="tag" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171" title="Targeting location error">Wrong location</span>`;
-    } else {
+    } else if (x.messaging) {
       tagHtml = `<span class="tag">WhatsApp</span>`;
+    } else if (x.leadForm) {
+      tagHtml = `<span class="tag">Lead form</span>`;
+    } else {
+      tagHtml = `<span class="tag warn" title="Destination: ${esc(x.destination)}">No chats or leads</span>`;
     }
     return `<div class="ad">
       <div class="ad-top"><div><strong>${esc(x.name)}</strong><small>${esc(x.campaign)} · ${esc(x.adset)}</small></div>${tagHtml}</div>
       <div class="share" title="${x.share}% of spend"><i style="width:${x.share}%"></i></div>
-      <div class="mini"><div><small>Spend</small><b>${money(x.spend)}</b></div><div><small>Conv.</small><b>${num(x.conv)}</b></div><div><small>Cost / conv.</small><b>${money(x.cpc)}</b></div><div><small>Frequency</small><b>${x.frequency.toFixed(1)}×</b></div></div>
+      <div class="mini"><div><small>Spend</small><b>${money(x.spend)}</b></div>${a.focus === "leads" ? `<div><small>Leads</small><b>${num(x.leads)}</b></div><div><small>Cost / lead</small><b>${money(METRICS.leads.cost(x))}</b></div>` : `<div><small>Conv.</small><b>${num(x.conv)}</b></div><div><small>Cost / conv.</small><b>${money(x.cpc)}</b></div>`}<div><small>Frequency</small><b>${x.frequency.toFixed(1)}×</b></div></div>
       <div class="setup">${x.share}% of spend · ${num(x.reach)} reached · ${num(x.clicks)} clicks · ${esc(x.objective)} goal · button “${esc(x.button)}”</div></div>`;
   }).join("")}</div></section>`;
   html += `<section class="card"><div class="card-head"><h3>${ICON.target}Targeting by ad set</h3><small>as set in Ads Manager</small></div><div class="targets">${a.targeting.map((x) => {
@@ -422,6 +426,7 @@ async function load() {
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || "request failed");
     data = j;
+    metric = j.audit?.focus === "leads" ? "leads" : "conv";
     render();
   } catch (error) {
     $("out").innerHTML = `<div class="status">Could not load the analysis (${esc(error.message)}). Try again in a minute.</div>`;

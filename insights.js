@@ -13,6 +13,8 @@ const QUERIES = {
   region: `${BASE},region`,
   targeting: "account_name,campaign,adset_name,adset_targeting,spend",
 };
+const LEAD_GOALS = ["LEAD_GENERATION", "QUALITY_LEAD"];
+const LEAD_OBJECTIVES = ["OUTCOME_LEADS", "LEAD_GENERATION"];
 const MESSAGING_DESTINATIONS = ["WHATSAPP", "MESSENGER", "INSTAGRAM_DIRECT", "MESSAGING_INSTAGRAM_DIRECT_MESSENGER", "MESSAGING_MESSENGER_WHATSAPP", "MESSAGING_INSTAGRAM_DIRECT_WHATSAPP", "MESSAGING_INSTAGRAM_DIRECT_MESSENGER_WHATSAPP"];
 const LABELS = {
   OUTCOME_AWARENESS: "Awareness", OUTCOME_ENGAGEMENT: "Engagement", OUTCOME_LEADS: "Leads", OUTCOME_SALES: "Sales", OUTCOME_TRAFFIC: "Traffic", OUTCOME_APP_PROMOTION: "App promotion",
@@ -25,9 +27,11 @@ const POSITION = { feed: "Feed", facebook_reels: "Reels", instagram_reels: "Reel
 
 const n = (v) => Number(v) || 0;
 const metrics = (rows) => {
-  const t = { spend: 0, impressions: 0, clicks: 0, conv: 0, leads: 0 };
-  for (const r of rows) { t.spend += n(r.spend); t.impressions += n(r.impressions); t.clicks += n(r.link_clicks); t.conv += n(r[CONV]); t.leads += n(r.actions_lead) + n(r[CONV]); } // leads = form leads + WhatsApp chats, as on the Portfolio
+  const t = { spend: 0, impressions: 0, clicks: 0, conv: 0, forms: 0, leads: 0 };
+  for (const r of rows) { t.spend += n(r.spend); t.impressions += n(r.impressions); t.clicks += n(r.link_clicks); t.conv += n(r[CONV]); t.forms += n(r.actions_lead); }
+  t.leads = t.forms + t.conv; // leads = form leads + WhatsApp chats, as on the Portfolio
   t.cpc = t.conv ? t.spend / t.conv : null;
+  t.cpl = t.leads ? t.spend / t.leads : null;
   t.ctr = t.impressions ? (t.clicks / t.impressions) * 100 : 0;
   return t;
 };
@@ -74,13 +78,22 @@ export function buildAudit(raw, account, money) {
     const m = metrics([r]);
     const destination = String(r.adset_destination_type || "");
     const messaging = MESSAGING_DESTINATIONS.includes(destination) || r.call_to_action_type === "WHATSAPP_MESSAGE" || r.adset_optimization_goal === "CONVERSATIONS";
+    const leadForm = !messaging && (LEAD_GOALS.includes(r.adset_optimization_goal) || LEAD_OBJECTIVES.includes(r.campaign_objective) || destination === "ON_AD");
     return {
       name: String(r.ad_name || "").trim(), campaign: r.campaign, adset: r.adset_name, ...m,
       reach: n(r.reach), frequency: n(r.frequency), share: pct(m.spend, totals.spend),
       objective: label(r.campaign_objective), goal: label(r.adset_optimization_goal), destination: label(destination || "UNDEFINED"), button: label(r.call_to_action_type),
-      messaging, costPerClick: m.clicks ? m.spend / m.clicks : null,
+      messaging, leadForm, costPerClick: m.clicks ? m.spend / m.clicks : null,
     };
   }).sort((a, b) => b.spend - a.spend);
+
+  const spendOn = (test) => ads.filter(test).reduce((s, a) => s + a.spend, 0);
+  const leadSpend = spendOn((a) => a.leadForm), chatSpend = spendOn((a) => a.messaging);
+  const focus = leadSpend > chatSpend || (leadSpend === chatSpend && totals.forms > totals.conv) ? "leads" : "conv";
+  const R = focus === "leads"
+    ? { key: "leads", cost: "cpl", one: "lead", many: "leads", short: "leads" }
+    : { key: "conv", cost: "cpc", one: "conversation", many: "conversations", short: "chats" };
+  const count = (v) => Math.round(v || 0).toLocaleString("en-IN");
 
   const placements = group(mine(raw.placement), (r) => `${r.publisher_platform === "instagram" ? "Instagram" : r.publisher_platform === "facebook" ? "Facebook" : label(r.publisher_platform)} ${POSITION[r.platform_position] || label(r.platform_position)}`);
   const demoRows = mine(raw.demo);
@@ -175,18 +188,25 @@ export function buildAudit(raw, account, money) {
     for (const t of techTargeting) {
       const found = t.interests.filter((i) => UNRELATED_TECH.includes(i));
       add("high", `Unrelated software developer targeting in ${t.adset}`,
-        `${t.adset} is restricted to software development interests (${found.join(", ")}). This limits your audience to software engineers and explains why conversations are low or 0. Remove these interests in Ads Manager.`);
+        `${t.adset} is restricted to software development interests (${found.join(", ")}). This limits your audience to software engineers and explains why ${R.many} are low or 0. Remove these interests in Ads Manager.`);
       suggestions.push(`Remove software/tech interest targeting from ${t.adset} (${found.join(", ")}).`);
     }
   }
 
-  const notMessaging = ads.filter((a) => a.conv === 0 && !a.messaging && a.spend >= 30);
-  if (notMessaging.length) {
-    const spend = notMessaging.reduce((s, a) => s + a.spend, 0);
-    add("high", `${notMessaging.length} ad${notMessaging.length > 1 ? "s" : ""} with no conversations ${notMessaging.length > 1 ? "are" : "is"} not set up for WhatsApp chats`,
-      notMessaging.map((a) => `${a.name}: ${a.objective} goal, optimising for ${a.goal.toLowerCase()}, button "${a.button}", destination ${a.destination}. ${m(a.spend)} spent, ${a.clicks} link clicks at ${m(a.costPerClick)} each.`).join("\n")
-      + `\nTogether ${m(spend)}. These ads direct people to Instagram profiles or external pages without a WhatsApp destination. If WhatsApp chats are the goal, rebuild them as conversation ads.`);
-    suggestions.push("Rebuild zero-conversation engagement ads as WhatsApp conversation ads if chats are the goal.");
+  // ads that can neither start a chat nor collect a lead (profile visits, engagement, traffic)
+  const noResultAds = ads.filter((a) => !a.messaging && !a.leadForm && a.leads === 0 && a.spend >= 30);
+  if (noResultAds.length) {
+    const spend = noResultAds.reduce((s, a) => s + a.spend, 0);
+    add("high", `${noResultAds.length} ad${noResultAds.length > 1 ? "s" : ""} cannot bring chats or leads`,
+      noResultAds.map((a) => `${a.name}: ${a.objective} goal, optimising for ${a.goal.toLowerCase()}, button "${a.button}", destination ${a.destination}. ${m(a.spend)} spent, ${a.clicks} link clicks at ${m(a.costPerClick)} each.`).join("\n")
+      + `\nTogether ${m(spend)}. These ads are not set up as WhatsApp chat or lead form ads, so they bring no chats or leads. If ${R.many} are the goal, rebuild them as ${focus === "leads" ? "lead form" : "WhatsApp conversation"} ads.`);
+    suggestions.push(`Rebuild ads that bring no chats or leads as ${focus === "leads" ? "lead form" : "WhatsApp conversation"} ads.`);
+  }
+
+  const silentForms = ads.filter((a) => a.leadForm && a.forms === 0 && (a.spend >= 100 || a.clicks >= 8));
+  if (silentForms.length) {
+    add("high", `Lead form ads spending without leads (${silentForms.length} ad${silentForms.length > 1 ? "s" : ""})`,
+      silentForms.map((a) => `${a.name} (${a.adset}): ${m(a.spend)}, ${a.clicks} clicks, 0 leads.`).join("\n") + "\nCheck the instant form opens and submits, and that the form is still active.");
   }
 
   const silentMessaging = ads.filter((a) => a.conv === 0 && a.messaging && (a.spend >= 100 || a.clicks >= 8));
@@ -200,31 +220,31 @@ export function buildAudit(raw, account, money) {
 
   const maxFreq = Math.max(0, ...ads.map((a) => a.frequency));
   if (maxFreq >= 3) {
-    add("medium", "Some people are seeing the same ad too often", ads.filter((a) => a.frequency >= 3).map((a) => `${a.name}: ${a.frequency.toFixed(1)} times per person.`).join(" ") + " Expect cost per conversation to rise; refresh the creative or widen the audience.");
+    add("medium", "Some people are seeing the same ad too often", ads.filter((a) => a.frequency >= 3).map((a) => `${a.name}: ${a.frequency.toFixed(1)} times per person.`).join(" ") + " Expect cost per ${R.one} to rise; refresh the creative or widen the audience.");
     suggestions.push("Refresh the most-shown creatives to prevent ad fatigue.");
   } else if (ads.length) {
     add("good", "No ad fatigue", `People saw each ad ${Math.min(...ads.map((a) => a.frequency)).toFixed(1)}–${maxFreq.toFixed(1)} times in the period.`);
   }
 
   const top = ads[0];
-  if (top && top.share >= 60 && ads.length > 1) add("info", `${top.name} carries ${top.share}% of spend`, `${m(top.spend)} of ${m(totals.spend)}, ${top.conv} conversations at ${m(top.cpc)} each. Results depend heavily on this one ad.`);
+  if (top && top.share >= 60 && ads.length > 1) add("info", `${top.name} carries ${top.share}% of spend`, `${m(top.spend)} of ${m(totals.spend)}, ${count(top[R.key])} ${R.many} at ${m(top[R.cost])} each. Results depend heavily on this one ad.`);
 
-  const withConv = (list) => list.filter((x) => x.conv > 0);
-  const enough = (x) => x.conv >= Math.max(5, totals.conv * 0.15);
-  const bestOf = (list) => withConv(list).filter(enough).sort((a, b) => a.cpc - b.cpc)[0];
+  const withResult = (list) => list.filter((x) => x[R.key] > 0);
+  const enough = (x) => x[R.key] >= Math.max(5, totals[R.key] * 0.15);
+  const bestOf = (list) => withResult(list).filter(enough).sort((a, b) => a[R.cost] - b[R.cost])[0];
   const compare = (list, what) => {
-    const ok = withConv(list).filter((x) => x.conv >= 3 && x.spend >= totals.spend * 0.05);
+    const ok = withResult(list).filter((x) => x[R.key] >= 3 && x.spend >= totals.spend * 0.05);
     const best = bestOf(list);
-    if (!best || ok.length < 2 || !totals.conv) return;
-    const worst = [...ok].sort((a, b) => b.cpc - a.cpc)[0];
-    if (worst.cpc < best.cpc * 1.3) return;
-    add("medium", `${what}: ${best.key} brings chats at the best cost`, `${best.key} brought ${best.conv} conversations (${pct(best.conv, totals.conv)}%) at ${m(best.cpc)} each${worst.key !== best.key ? `, against ${m(worst.cpc)} for ${worst.key}` : ""}.`);
+    if (!best || ok.length < 2 || !totals[R.key]) return;
+    const worst = [...ok].sort((a, b) => b[R.cost] - a[R.cost])[0];
+    if (worst[R.cost] < best[R.cost] * 1.3) return;
+    add("medium", `${what}: ${best.key} brings ${R.many} at the best cost`, `${best.key} brought ${count(best[R.key])} ${R.many} (${pct(best[R.key], totals[R.key])}%) at ${m(best[R.cost])} each${worst.key !== best.key ? `, against ${m(worst[R.cost])} for ${worst.key}` : ""}.`);
   };
   compare(placements, "Placement");
   compare(dayparts, "Time of day");
   compare(ages, "Age");
-  const clickHeavy = placements.filter((p) => p.clicks >= 30 && p.conv <= 1 && p.spend >= totals.spend * 0.08);
-  if (clickHeavy.length) add("medium", "Placements with clicks but almost no chats", clickHeavy.map((p) => `${p.key}: ${m(p.spend)}, ${p.clicks} clicks, ${p.conv} conversations.`).join(" "));
+  const clickHeavy = placements.filter((p) => p.clicks >= 30 && p[R.key] <= 1 && p.spend >= totals.spend * 0.08);
+  if (clickHeavy.length) add("medium", `Placements with clicks but almost no ${R.many}`, clickHeavy.map((p) => `${p.key}: ${m(p.spend)}, ${p.clicks} clicks, ${count(p[R.key])} ${R.many}.`).join(" "));
 
   for (const list of overlapGroups) {
     add("medium", "Ad sets compete for the same people", `${list.map((t) => `${t.adset} (${t.campaign})`).join(", ")} have identical targeting (${list[0].include.slice(0, 2).join("; ")}, ages ${list[0].age}). When they run together they bid against each other; combine them into one ad set.`);
@@ -232,14 +252,14 @@ export function buildAudit(raw, account, money) {
   if (overlapGroups.length) suggestions.push("Run one ad set per audience instead of duplicates with identical targeting.");
 
   const bestPlacement = bestOf(placements);
-  if (bestPlacement) suggestions.push(`Move budget toward ${bestPlacement.key} (${m(bestPlacement.cpc)} per conversation).`);
+  if (bestPlacement) suggestions.push(`Move budget toward ${bestPlacement.key} (${m(bestPlacement[R.cost])} per ${R.one}).`);
   const bestPart = bestOf(dayparts);
-  if (bestPart) suggestions.push(`Weight spend toward ${bestPart.key} (${pct(bestPart.conv, totals.conv)}% of chats at ${m(bestPart.cpc)} each).`);
+  if (bestPart) suggestions.push(`Weight spend toward ${bestPart.key} (${pct(bestPart[R.key], totals[R.key])}% of ${R.many} at ${m(bestPart[R.cost])} each).`);
 
   const locales = targeting.filter((t) => t.locales.length);
   if (locales.length) {
     add("medium", "Ad sets limited by app language", `${locales.map((t) => `${t.adset} (${t.campaign}): language code ${t.locales.join(", ")}`).join("; ")}. People whose Facebook or Instagram is set to another language (often English) will not see these ads. Check this in Ads Manager.`);
-    suggestions.push("Test a copy of the main WhatsApp ad set open to all languages.");
+    suggestions.push("Test a copy of the main ad set open to all languages.");
   }
 
   const interestSets = targeting.filter((t) => t.interests.length);
@@ -262,10 +282,10 @@ export function buildAudit(raw, account, money) {
     add("info", "Interest targeting to double-check", `${detail} Make sure these interests match the business.`);
   }
 
-  suggestions.push("Ask the client how many chats turned into orders or bookings, and record it under Lead feedback.");
+  suggestions.push(`Ask the client how many ${R.short} turned into orders or bookings, and record it under Lead feedback.`);
 
   return {
-    account, totals: { ...totals, reach, ads: ads.length },
+    account, focus, totals: { ...totals, reach, ads: ads.length },
     ads, placements, ages, genders, hours, dayparts, regions, targeting: targeting.map(({ signature, ...t }) => t),
     findings, suggestions, locationMismatches,
   };
@@ -317,7 +337,7 @@ export function createInsights({ windsorKey, openaiKey, model, db }) {
   async function writeSummary(audit, period, user) {
     if (!openaiKey()) throw Object.assign(new Error("OpenAI is not connected yet."), { status: 409 });
     const facts = {
-      period, totals: audit.totals, findings: audit.findings, suggestions: audit.suggestions,
+      period, mainResult: audit.focus === "leads" ? "leads (lead form leads plus WhatsApp chats)" : "WhatsApp conversations", totals: audit.totals, findings: audit.findings, suggestions: audit.suggestions,
       locationMismatches: audit.locationMismatches,
       ads: audit.ads.map(({ name, campaign, adset, spend, conv, leads, clicks, frequency, objective, goal, destination, button }) => ({ name, campaign, adset, spend: Math.round(spend), conv, leads, clicks, frequency: Number(frequency.toFixed(2)), objective, goal, destination, button })),
       placements: audit.placements.slice(0, 8), dayparts: audit.dayparts, ages: audit.ages, genders: audit.genders, regions: audit.regions,
@@ -336,8 +356,9 @@ export function createInsights({ windsorKey, openaiKey, model, db }) {
             "You are a senior Meta Ads performance analyst at CreativHeads, a marketing agency in Kerala, writing an internal account review for the agency team.",
             "Use ONLY the numbers and facts in the supplied JSON. Never invent figures or causes. If something is uncertain, say it is worth checking.",
             "CRITICAL: If location mismatches (e.g. ad set named for one city like Coimbatore targeting another city/state like Calicut/Kerala), unrelated interests (e.g. software engineer targeting for local businesses), or zero-conversation ads are in findings, highlight them prominently as key findings and top actions in 'What to change'.",
-            "Write in plain, direct English for busy marketers. Money in rupees like ₹1,234. 'Conversations' means WhatsApp chats started.",
-            "Write cost per conversation as '₹58 per conversation'. Never write CPC, CPA or CPM. When a period has few conversations, say the numbers are small.",
+            "Write in plain, direct English for busy marketers. Money in rupees like ₹1,234. 'Conversations' means WhatsApp chats started; 'forms' are lead form leads; 'leads' is forms plus conversations.",
+            "Judge the account on its mainResult. If mainResult is leads, do not call lead form ads a problem for having no WhatsApp conversations.",
+            "Write cost per result as '₹58 per lead' or '₹58 per conversation'. Never write CPC, CPA or CPM. When a period has few results, say the numbers are small.",
             "Return JSON only, in this shape:",
             '{"headline":"the single most important finding, one sentence with numbers",',
             '"verdict":"good" | "mixed" | "poor",',
