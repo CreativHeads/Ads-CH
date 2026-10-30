@@ -243,7 +243,24 @@ export function buildAudit(raw, account, money) {
   }
 
   const interestSets = targeting.filter((t) => t.interests.length);
-  if (interestSets.length) add("info", "Interest targeting to double-check", interestSets.map((t) => `${t.adset} (${t.campaign}): ${t.interests.slice(0, 8).join(", ")}${t.interests.length > 8 ? " and more" : ""}`).join("; ") + ". Make sure these match the business.");
+  if (interestSets.length) {
+    // ad sets usually share one interest list: say it once, then name the ad sets that use it
+    const clean = (i) => i.replace(/\s*\([^)]*\)\s*$/, "");
+    const lists = new Map();
+    for (const t of interestSets) {
+      const list = [...new Set(t.interests.map(clean))];
+      const k = list.join("|");
+      if (!lists.has(k)) lists.set(k, { list, adsets: [] });
+      lists.get(k).adsets.push(t.adset);
+    }
+    const names = (a) => (a.length > 4 ? `${a.slice(0, 4).join(", ")} and ${a.length - 4} more` : a.join(", "));
+    const words = (l) => `${l.slice(0, 8).join(", ")}${l.length > 8 ? ` and ${l.length - 8} more` : ""}`;
+    const groups = [...lists.values()].sort((a, b) => b.adsets.length - a.adsets.length);
+    const detail = groups.length === 1
+      ? `${interestSets.length === 1 ? "1 ad set targets these" : `All ${interestSets.length} ad sets with interests target the same ${groups[0].list.length}`} interests: ${words(groups[0].list)}. Ad sets: ${names(groups[0].adsets)}.`
+      : groups.map((g) => `${g.adsets.length} ${g.adsets.length > 1 ? "ad sets" : "ad set"} (${names(g.adsets)}) ${g.adsets.length > 1 ? "target" : "targets"}: ${words(g.list)}.`).join(" ");
+    add("info", "Interest targeting to double-check", `${detail} Make sure these interests match the business.`);
+  }
 
   suggestions.push("Ask the client how many chats turned into orders or bookings, and record it under Lead feedback.");
 
