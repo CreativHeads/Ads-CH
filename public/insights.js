@@ -269,7 +269,7 @@ function render() {
       ${renderFindingsList(findings, defaultFilter)}
     </div>
   </section>`;
-  html += `<section class="card"><div class="card-head"><h3>${ICON.list}Suggested changes</h3><small>for whoever manages the ad account</small></div><ol class="steps">${a.suggestions.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></section>`;
+  if (me?.role !== "staff") html += `<section class="card"><div class="card-head"><h3>${ICON.list}Suggested changes</h3><small>for whoever manages the ad account</small></div><ol class="steps">${a.suggestions.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></section>`;
   html += `<div id="breakdowns">${breakdowns()}</div>`;
   html += `<section class="card"><div class="card-head"><h3>${ICON.chart}Every ad</h3><small>goal, button and destination decide whether an ad can start WhatsApp chats</small></div><div class="ads">${a.ads.map((x) => {
     const mis = mismatchMap.get(x.adset);

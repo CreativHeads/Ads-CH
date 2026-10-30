@@ -1750,6 +1750,7 @@ tbody tr.clickable:hover td {
 .delta-arrow { font-size: 12px !important; font-weight: 700 !important; }
 /* read-only (client) logins don't get the Management menu on the standalone pages */
 .role-staff .nav-management { display: none !important; }
+.dashboard-grid.single { grid-template-columns: minmax(0, 1fr) !important; }
 /* the grey ".metric-comparison span" rule above must not repaint the arrow and % inside a delta */
 .metric-comparison .delta span, [data-theme="dark"] .metric-comparison .delta span { color: inherit !important; }
 
