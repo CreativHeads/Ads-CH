@@ -250,7 +250,8 @@ function render() {
     <div class="chips"><span class="chip">${esc(period(data.from, data.to))}</span><span class="chip"><i class="dot"></i>Live Meta data</span></div></section>`;
   html += `<div class="kpis">${kpis.map(([l, v, accent]) => `<div class="kpi ${accent ? "accent" : ""}"><small>${l}</small><strong>${v}</strong></div>`).join("")}</div>`;
   html += aiCard();
-  html += `<section class="card" id="findings-card">
+  // Findings are internal notes for the team; read-only (client) logins don't see them
+  if (me?.role !== "staff") html += `<section class="card" id="findings-card">
     <div class="card-head findings-head">
       <div>
         <h3>${ICON.alert}Findings</h3>
@@ -299,9 +300,9 @@ function render() {
   }).join("") || `<p class="footnote">No targeting details for this period.</p>`}</div></section>`;
   $("out").innerHTML = html;
 
-  document.querySelectorAll(".findings-filter .filter-btn").forEach((btn) => {
+  document.querySelectorAll("#findings-card .filter-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".findings-filter .filter-btn").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll("#findings-card .filter-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const filterKey = btn.dataset.filter;
       const sec = FINDING_SECTIONS.find((s) => s.key === filterKey);

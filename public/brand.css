@@ -1748,6 +1748,8 @@ tbody tr.clickable:hover td {
 .delta.positive, .metric-comparison .delta.positive { color: #059669 !important; }
 .delta.neutral, .delta.delta-neutral, .metric-comparison .delta.neutral { color: #64748b !important; }
 .delta-arrow { font-size: 12px !important; font-weight: 700 !important; }
+/* read-only (client) logins don't get the Management menu on the standalone pages */
+.role-staff .nav-management { display: none !important; }
 /* the grey ".metric-comparison span" rule above must not repaint the arrow and % inside a delta */
 .metric-comparison .delta span, [data-theme="dark"] .metric-comparison .delta span { color: inherit !important; }
 
