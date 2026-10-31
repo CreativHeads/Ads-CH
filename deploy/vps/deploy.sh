@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Deploy the committed app to the VPS and serve it at ads.creativheads.com.
+# Deploy the committed app to the VPS and serve it at pulse.creativheads.com.
 # Run from hostinger-web in Git Bash:  bash deploy/vps/deploy.sh
 # Safe to re-run for updates: it replaces the code, keeps the data volume and .env.
 set -euo pipefail
 
 HOST=root@187.126.125.145
 KEY=~/.ssh/creativheads_vps
-DOMAIN=ads.creativheads.com
+DOMAIN=pulse.creativheads.com
 CADDYFILE=/opt/casting-manager/deploy/vps/Caddyfile
 SSH="ssh -i $KEY -o BatchMode=yes $HOST"
 

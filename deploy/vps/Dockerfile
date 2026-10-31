@@ -1,4 +1,4 @@
-# CreativHeads Ad Reports on the VPS (ads.creativheads.com).
+# CreativHeads Ad Reports on the VPS (pulse.creativheads.com).
 FROM node:22-alpine
 WORKDIR /app
 COPY package.json *.js ./

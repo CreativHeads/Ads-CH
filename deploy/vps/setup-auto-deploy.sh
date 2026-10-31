@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time setup so every push to GitHub goes live at ads.creativheads.com.
+# One-time setup so every push to GitHub goes live at pulse.creativheads.com.
 # Run from hostinger-web in Git Bash:  bash deploy/vps/setup-auto-deploy.sh
 #   1. creates a separate SSH key for GitHub Actions (on this PC)
 #   2. installs the receiver on the VPS and lets that key run only the receiver
@@ -54,6 +54,6 @@ Last step, in your browser:
   2. Name:   VPS_DEPLOY_KEY
      Secret: paste the private key. $COPIED
   3. Click "Add secret".
-After that, every push to main goes live at https://ads.creativheads.com
+After that, every push to main goes live at https://pulse.creativheads.com
 (watch it under the repo's Actions tab).
 EOF

@@ -6,7 +6,7 @@
 # the upload, so a push can change the app but not the server setup.
 set -eu
 APP=${AD_REPORTS_DIR:-/opt/ad-reports}   # override only for local tests
-DOMAIN=ads.creativheads.com
+DOMAIN=pulse.creativheads.com
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 

@@ -1,4 +1,4 @@
-# Every push to main goes live at https://ads.creativheads.com.
+# Every push to main goes live at https://pulse.creativheads.com.
 # The VPS_DEPLOY_KEY secret is a key that can only run /usr/local/bin/ad-reports-receive
 # on the VPS (see deploy/vps/setup-auto-deploy.sh).
 name: Deploy to VPS
@@ -38,8 +38,8 @@ jobs:
       - name: Check the site answers
         run: |
           for i in $(seq 1 12); do
-            if curl -fsS -o /dev/null https://ads.creativheads.com/login; then echo "live"; exit 0; fi
+            if curl -fsS -o /dev/null https://pulse.creativheads.com/login; then echo "live"; exit 0; fi
             sleep 5
           done
-          echo "ads.creativheads.com did not answer after the deploy" >&2
+          echo "pulse.creativheads.com did not answer after the deploy" >&2
           exit 1
